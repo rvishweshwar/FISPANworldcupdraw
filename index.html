@@ -918,7 +918,7 @@ let teamData = {};
 let groupsData = {};
 let matchesData = [];
 let lastFetchOk = false;
-let countdownVal = 60;
+let countdownVal = 3600;
 let countdownInterval = null;
 let refreshInterval = null;
 
@@ -1067,7 +1067,7 @@ function parseStandings(data) {
 
   const parseGroup = (group) => {
     const groupName = group.name || group.abbreviation || group.shortName || '';
-    const letter = groupName.replace(/[^A-L]/gi, '').toUpperCase() || groupName;
+    const letter = groupName.replace(/^Group\s*/i, '').trim() || groupName;
     const entries = group.standings?.entries || group.entries || [];
     const groupTeams = [];
 
@@ -1537,11 +1537,13 @@ function hideError() {
 }
 
 function resetCountdown() {
-  countdownVal = 60;
+  countdownVal = 3600;
   if (countdownInterval) clearInterval(countdownInterval);
   countdownInterval = setInterval(() => {
     countdownVal--;
-    document.getElementById('countdown').textContent = `Refresh in: ${countdownVal}s`;
+    const mins = Math.floor(countdownVal / 60);
+    const secs = countdownVal % 60;
+    document.getElementById('countdown').textContent = `Refresh in: ${mins}m ${secs.toString().padStart(2,'0')}s`;
     if (countdownVal <= 0) {
       clearInterval(countdownInterval);
       document.getElementById('countdown').textContent = 'Refreshing…';
@@ -1560,9 +1562,9 @@ async function init() {
     }, 600);
   }, 400);
 
-  // Auto-refresh every 60s
+  // Auto-refresh every 60 minutes
   if (refreshInterval) clearInterval(refreshInterval);
-  refreshInterval = setInterval(fetchAllData, 60000);
+  refreshInterval = setInterval(fetchAllData, 3600000);
 }
 
 init();
