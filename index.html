@@ -533,128 +533,96 @@
   .odds-no-data { font-size: 0.75rem; color: var(--muted); text-align: center; padding: 10px 0; }
 
   /* BRACKET TAB */
-  #bracketWrap {
-    overflow-x: auto;
-    padding-bottom: 12px;
+  #bracketWrap { overflow-x: auto; padding-bottom: 16px; }
+
+  /* Column */
+  .bcol {
+    display: flex; flex-direction: column;
+    flex-shrink: 0; width: 112px;
   }
-  .bracket-title {
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 900;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 4px;
+  .bcol-narrow { width: 112px; }
+  .bcol-hdr {
+    text-align: center; font-size: 0.58rem; font-weight: 800;
+    color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 0 0 8px; flex-shrink: 0;
   }
-  .bracket-subtitle {
-    text-align: center;
-    font-size: 0.65rem;
-    color: var(--muted);
-    margin-bottom: 14px;
-    letter-spacing: 0.05em;
-  }
-  .bracket-grid {
-    display: grid;
-    grid-template-columns: 148px 120px 96px 80px 96px 120px 148px;
-    grid-template-rows: auto;
-    gap: 0;
-    min-width: 820px;
-    align-items: center;
-    position: relative;
-  }
-  .bracket-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    justify-content: space-around;
-  }
-  .bracket-col-label {
-    text-align: center;
-    font-size: 0.6rem;
-    font-weight: 800;
-    color: var(--gold);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 4px 0 10px;
-  }
-  /* individual match slot */
-  .bslot {
-    margin: 4px 3px;
-    border-radius: 9px;
+
+  /* Match slot */
+  .bs {
+    flex-shrink: 0;
     border: 1px solid var(--border);
+    border-radius: 8px;
     background: var(--card);
     overflow: hidden;
-    min-width: 130px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    position: relative;
+    transition: border-color 0.2s;
   }
-  .bslot:hover { border-color: rgba(245,166,35,0.5); }
-  .bslot.live  { border-color: var(--gold); box-shadow: 0 0 10px rgba(245,166,35,0.3); animation: pulse-border 2s ease-in-out infinite; }
-  .bslot.done  { border-color: rgba(0,208,132,0.3); }
-  .bslot.tbd   { opacity: 0.5; }
-  .bslot-round-label {
-    font-size: 0.52rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--gold);
-    background: rgba(245,166,35,0.08);
-    padding: 2px 6px;
-    border-bottom: 1px solid var(--border);
+  .bs:hover { border-color: rgba(245,166,35,0.4); }
+  .bs-live { border-color: var(--gold); box-shadow: 0 0 8px rgba(245,166,35,0.25); animation: pulse-border 2s ease-in-out infinite; }
+  .bs-done { border-color: rgba(0,208,132,0.3); }
+  .bs-tbd  { border-color: rgba(107,117,144,0.2); opacity: 0.45; }
+
+  .bs-live-bar {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(245,166,35,0.15);
+    font-size: 0.5rem; font-weight: 900; color: var(--gold);
+    padding: 1px 5px; text-transform: uppercase; letter-spacing: 0.1em;
   }
-  .bslot-round-label.live-label { background: rgba(245,166,35,0.2); color: var(--gold); }
-  .bslot-team {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 7px;
-    font-size: 0.72rem;
-    font-weight: 600;
+  .bs-live-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--gold); flex-shrink: 0;
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+  .bs-date {
+    font-size: 0.48rem; color: var(--muted);
+    padding: 1px 5px; text-align: right;
+    background: rgba(255,255,255,0.02);
     border-bottom: 1px solid rgba(255,255,255,0.04);
-    min-height: 28px;
   }
-  .bslot-team:last-child { border-bottom: none; }
-  .bslot-team.winner { background: rgba(0,208,132,0.1); font-weight: 800; }
-  .bslot-team.loser  { opacity: 0.45; }
-  .bslot-flag  { font-size: 1rem; flex-shrink: 0; }
-  .bslot-name  { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.67rem; }
-  .bslot-score { font-size: 0.78rem; font-weight: 900; min-width: 16px; text-align: right; }
-  .bslot-owner { font-size: 0.52rem; color: var(--gold); white-space: nowrap; }
-  .bslot-date  { font-size: 0.52rem; color: var(--muted); padding: 2px 7px 3px; text-align: right; }
-  .bslot-live-dot { display: inline-block; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; margin-right: 3px; animation: pulse-dot 1s ease-in-out infinite; }
-  @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
-  /* center trophy column */
-  .bracket-center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px 4px;
+  .bs-team {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 5px; min-height: 26px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
   }
-  .trophy-emoji { font-size: 3rem; line-height: 1; }
-  .trophy-label { font-size: 0.6rem; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; }
-  .final-slot { margin: 6px 0; }
-  /* connector lines via borders */
-  .bconn-right {
-    border-right: 2px solid rgba(245,166,35,0.25);
-    border-top: 2px solid rgba(245,166,35,0.25);
-    border-bottom: 2px solid rgba(245,166,35,0.25);
-    margin: 0;
-    flex-shrink: 0;
+  .bs-team:last-of-type { border-bottom: none; }
+  .bs-win  { background: rgba(0,208,132,0.1); }
+  .bs-lose { opacity: 0.4; }
+  .bs-flag { font-size: 0.95rem; flex-shrink: 0; line-height: 1; }
+  .bs-lbl  {
+    flex: 1; font-size: 0.62rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text);
   }
-  .bconn-left {
-    border-left: 2px solid rgba(245,166,35,0.25);
-    border-top: 2px solid rgba(245,166,35,0.25);
-    border-bottom: 2px solid rgba(245,166,35,0.25);
-    margin: 0;
-    flex-shrink: 0;
+  .bs-score { font-size: 0.7rem; font-weight: 900; flex-shrink: 0; color: var(--muted); }
+  .bs-score-win { color: var(--green); }
+  .bs-divider { height: 1px; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+
+  /* Connector columns */
+  .bconn-col {
+    flex-shrink: 0; width: 18px;
+    display: flex; flex-direction: column;
+    padding-top: 28px; /* align with slots below header */
   }
-  .bracket-legend {
-    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
-    font-size: 0.62rem; color: var(--muted); margin-top: 12px; padding-top: 10px;
-    border-top: 1px solid var(--border);
+  .bconn-group {
+    flex-shrink: 0; position: relative;
+    display: flex; align-items: center;
   }
+  /* Vertical bar that spans the two slots */
+  .bconn-line-v {
+    position: absolute; width: 2px;
+    background: rgba(245,166,35,0.3);
+    top: 13px; bottom: 13px; /* inset from top and bottom of the group */
+  }
+  .bconn-line-v-l { right: 0; }
+  .bconn-line-v-r { left: 0; }
+  /* Horizontal bar going toward next round */
+  .bconn-line-h {
+    position: absolute; height: 2px;
+    background: rgba(245,166,35,0.3);
+    top: 50%;
+  }
+  .bconn-line-h-l { left: 50%; right: 0; }
+  .bconn-line-h-r { right: 50%; left: 0; }
+
   .bracket-legend span { display: flex; align-items: center; gap: 4px; }
 
   /* PREDICTIONS TAB */
@@ -2344,250 +2312,421 @@ function renderOdds() {
 }
 
 // ─── BRACKET ──────────────────────────────────────────────────────────────────
+// Official 2026 WC bracket progression (verified from ESPN event names):
+// LEFT HALF → SF-1 (760514):
+//   QF-1 (760510): R16-1 (760502) ← R32-1(760486) + R32-3(760490)
+//                  R16-2 (760503) ← R32-2(760487) + R32-5(760492)
+//   QF-2 (760511): R16-5 (760506) ← R32-11(760497) + R32-12(760496)
+//                  R16-6 (760507) ← R32-9(760493)  + R32-10(760495)
+// RIGHT HALF → SF-2 (760515):
+//   QF-3 (760512): R16-3 (760504) ← R32-4(760489)  + R32-6(760491)
+//                  R16-4 (760505) ← R32-7(760488)   + R32-8(760494)
+//   QF-4 (760513): R16-7 (760509) ← R32-14(760499) + R32-16(760501)
+//                  R16-8 (760508) ← R32-13(760498)  + R32-15(760500)
+// FINAL (760517): SF-1W + SF-2W
+// 3RD  (760516): SF-1L + SF-2L
 
-// ESPN event ID → bracket slot index (1-16 left side, 17-32 right side mirror)
-// Left side R32: slots 1-8 top→bottom, Right side R32: slots 9-16 top→bottom
-// Mapping based on official 2026 WC bracket draw
-const BRACKET_SLOTS = [
-  // id,  label,                           slot (1-16 left, 17-32 right)
-  { id:'760486', label:'R32-1'  },  // South Africa vs Canada           → L1
-  { id:'760487', label:'R32-2'  },  // Brazil vs Japan                  → L2
-  { id:'760490', label:'R32-3'  },  // Ivory Coast vs Norway            → L3
-  { id:'760489', label:'R32-4'  },  // Germany vs 3rd                   → L4
-  { id:'760492', label:'R32-5'  },  // France vs 3rd                    → L5
-  { id:'760491', label:'R32-6'  },  // Mexico vs 3rd                    → L6
-  { id:'760488', label:'R32-7'  },  // Netherlands vs Morocco           → L7
-  { id:'760494', label:'R32-8'  },  // USA vs Bosnia                    → L8
-  { id:'760493', label:'R32-9'  },  // Group G Winner vs 3rd            → R1
-  { id:'760495', label:'R32-10' },  // Group L Winner vs 3rd            → R2
-  { id:'760497', label:'R32-11' },  // Group H Winner vs Group J 2nd    → R3
-  { id:'760496', label:'R32-12' },  // Group K 2nd vs Group L 2nd       → R4
-  { id:'760498', label:'R32-13' },  // Switzerland vs 3rd               → R5
-  { id:'760499', label:'R32-14' },  // Australia vs Group G 2nd         → R6
-  { id:'760500', label:'R32-15' },  // Argentina vs Group H 2nd         → R7
-  { id:'760501', label:'R32-16' },  // Group K Winner vs 3rd            → R8
-  { id:'760502', label:'R16-1'  },  // R32-1W vs R32-3W
-  { id:'760503', label:'R16-2'  },  // R32-2W vs R32-5W
-  { id:'760504', label:'R16-3'  },  // R32-4W vs R32-6W
-  { id:'760505', label:'R16-4'  },  // R32-7W vs R32-8W
-  { id:'760506', label:'R16-5'  },  // R32-11W vs R32-12W
-  { id:'760507', label:'R16-6'  },  // R32-9W vs R32-10W
-  { id:'760509', label:'R16-7'  },  // R32-14W vs R32-16W
-  { id:'760508', label:'R16-8'  },  // R32-13W vs R32-15W
-  { id:'760510', label:'QF-1'   },  // R16-1W vs R16-2W
-  { id:'760511', label:'QF-2'   },  // R16-5W vs R16-6W
-  { id:'760512', label:'QF-3'   },  // R16-3W vs R16-4W
-  { id:'760513', label:'QF-4'   },  // R16-7W vs R16-8W
-  { id:'760514', label:'SF-1'   },  // QF-1W vs QF-2W
-  { id:'760515', label:'SF-2'   },  // QF-3W vs QF-4W
-  { id:'760516', label:'3RD'    },  // SF-1L vs SF-2L
-  { id:'760517', label:'FINAL'  },  // SF-1W vs SF-2W
-];
+function makeBSlot(match, opts) {
+  const { label='', mini=false, isFinalSlot=false } = opts || {};
 
-function buildBracketMatchMap() {
-  const map = {};
-  (matchesData || []).forEach(m => {
-    // Try to match by team names against bracket slots using raw event data
-    map[m.id] = m;
-  });
-  return map;
-}
-
-function makeBSlot(match, label, showDate) {
   if (!match) {
-    // TBD slot
-    return `<div class="bslot tbd">
-      <div class="bslot-round-label">${label}</div>
-      <div class="bslot-team"><span class="bslot-flag">⬜</span><span class="bslot-name" style="color:var(--muted)">TBD</span></div>
-      <div class="bslot-team"><span class="bslot-flag">⬜</span><span class="bslot-name" style="color:var(--muted)">TBD</span></div>
+    const h = mini ? 22 : 26;
+    return `<div class="bs bs-tbd" style="min-height:${h*2+2}px">
+      <div class="bs-team"><span class="bs-flag">—</span></div>
+      <div class="bs-divider"></div>
+      <div class="bs-team"><span class="bs-flag">—</span></div>
     </div>`;
   }
 
   const isLive = match.isLive;
   const isDone = match.isFinal;
-  const cls = isLive ? 'live' : isDone ? 'done' : '';
-
-  const hName = match.homeTeam || 'TBD';
-  const aName = match.awayTeam || 'TBD';
-  const hFlag = hName.length < 25 ? (getFlag(hName) || '🏳️') : '❓';
-  const aFlag = aName.length < 25 ? (getFlag(aName) || '🏳️') : '❓';
+  const hName  = match.homeTeam || '';
+  const aName  = match.awayTeam || '';
+  const hFlag  = getFlag(hName);
+  const aFlag  = getFlag(aName);
   const hOwner = getOwner(hName);
   const aOwner = getOwner(aName);
-  const hScore = match.homeScore !== '-' ? match.homeScore : '';
-  const aScore = match.awayScore !== '-' ? match.awayScore : '';
-  const hWin = isDone && parseInt(hScore) > parseInt(aScore);
-  const aWin = isDone && parseInt(aScore) > parseInt(hScore);
-  const isTBDTeam = (n) => n.toLowerCase().includes('winner') || n.toLowerCase().includes('group') || n.toLowerCase().includes('place') || n.toLowerCase().includes('loser') || n.toLowerCase().includes('3rd');
+  const hScore = (isDone || isLive) ? (match.homeScore ?? '') : '';
+  const aScore = (isDone || isLive) ? (match.awayScore ?? '') : '';
+  const hNum   = parseInt(hScore);
+  const aNum   = parseInt(aScore);
+  const hWin   = isDone && hNum > aNum;
+  const aWin   = isDone && aNum > hNum;
+  const isTBD  = n => !n || n.toLowerCase().includes('winner') || n.toLowerCase().includes('group')
+                          || n.toLowerCase().includes('place')  || n.toLowerCase().includes('loser')
+                          || n.toLowerCase().includes('3rd')    || n.toLowerCase().includes('round of');
 
-  const roundLabel = isLive
-    ? `<span class="bslot-live-dot"></span>${label}`
-    : label;
-
-  const dateStr = showDate && match.date
-    ? `<div class="bslot-date">${new Date(match.date).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'})} ET</div>`
+  const slotCls = isLive ? 'bs-live' : isDone ? 'bs-done' : '';
+  const dateStr = match.date
+    ? new Date(match.date).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'})
     : '';
 
-  return `<div class="bslot ${cls}">
-    <div class="bslot-round-label ${isLive?'live-label':''}">${roundLabel}</div>
-    <div class="bslot-team ${isDone?(hWin?'winner':'loser'):''}">
-      <span class="bslot-flag">${isTBDTeam(hName)?'❓':hFlag}</span>
-      <span class="bslot-name">${isTBDTeam(hName) ? hName.replace(/^Group\s+/,'').replace(/^Round of 32\s+/,'R32-').replace(/^Round of 16\s+/,'R16-').replace(' Winner','✓').replace(' 2nd Place','②') : hName}</span>
-      ${isDone||isLive ? `<span class="bslot-score" style="color:${hWin?'var(--green)':'var(--muted)'}">${hScore}</span>` : ''}
-    </div>
-    ${hOwner ? `<div class="bslot-owner" style="padding:0 7px 1px;">👤 ${hOwner}</div>` : ''}
-    <div class="bslot-team ${isDone?(aWin?'winner':'loser'):''}">
-      <span class="bslot-flag">${isTBDTeam(aName)?'❓':aFlag}</span>
-      <span class="bslot-name">${isTBDTeam(aName) ? aName.replace(/^Group\s+/,'').replace(/^Round of 32\s+/,'R32-').replace(/^Round of 16\s+/,'R16-').replace(' Winner','✓').replace(' 2nd Place','②') : aName}</span>
-      ${isDone||isLive ? `<span class="bslot-score" style="color:${aWin?'var(--green)':'var(--muted)'}">${aScore}</span>` : ''}
-    </div>
-    ${aOwner ? `<div class="bslot-owner" style="padding:0 7px 1px;">👤 ${aOwner}</div>` : ''}
-    ${dateStr}
+  const teamRow = (flag, name, owner, score, win, lose) => {
+    const f   = isTBD(name) ? '' : (flag || '');
+    const lbl = isTBD(name) ? '?' : (owner || (flag || '?'));
+    return `<div class="bs-team ${win?'bs-win':''} ${lose?'bs-lose':''}">
+      <span class="bs-flag">${f}</span>
+      <span class="bs-lbl">${lbl}</span>
+      ${(isDone||isLive) ? `<span class="bs-score ${win?'bs-score-win':''}">${score}</span>` : ''}
+    </div>`;
+  };
+
+  return `<div class="bs ${slotCls}">
+    ${isLive ? `<div class="bs-live-bar"><span class="bs-live-dot"></span>LIVE</div>` : (dateStr ? `<div class="bs-date">${dateStr}</div>` : '')}
+    ${teamRow(hFlag, hName, hOwner, hScore, hWin, aWin&&isDone)}
+    <div class="bs-divider"></div>
+    ${teamRow(aFlag, aName, aOwner, aScore, aWin, hWin&&isDone)}
   </div>`;
+}
+
+// Build a connector element (the lines between rounds)
+// type: 'bracket-r' (right-facing ⌐¬), 'bracket-l' (left-facing)
+// spans: how many slot heights this connector bridges
+function makeConn(type, spans) {
+  return `<div class="bc bc-${type}" style="--spans:${spans}"></div>`;
 }
 
 function renderBracket() {
   const container = document.getElementById('bracketWrap');
 
-  // Build id→match lookup from matchesData
   const byId = {};
   (matchesData || []).forEach(m => { if (m.id) byId[String(m.id)] = m; });
+  const M = id => byId[String(id)] || null;
 
-  // Helper to get match by ESPN event id
-  const M = (id) => byId[id] || null;
+  // ── All matches by role ──────────────────────────────────────────────────
+  // LEFT half
+  const r32_1  = M('760486'), r32_3  = M('760490'); // → R16-1 (760502)
+  const r32_2  = M('760487'), r32_5  = M('760492'); // → R16-2 (760503)
+  const r32_11 = M('760497'), r32_12 = M('760496'); // → R16-5 (760506)
+  const r32_9  = M('760493'), r32_10 = M('760495'); // → R16-6 (760507)
+  const r16_1  = M('760502'), r16_2  = M('760503'); // → QF-1  (760510)
+  const r16_5  = M('760506'), r16_6  = M('760507'); // → QF-2  (760511)
+  const qf1    = M('760510'), qf2    = M('760511'); // → SF-1  (760514)
+  const sf1    = M('760514');
 
-  // Left side R32 (top 8)
-  const L = [
-    M('760486'), M('760487'), M('760490'), M('760489'),
-    M('760492'), M('760491'), M('760488'), M('760494'),
-  ];
-  // Right side R32 (top 8, displayed mirrored)
-  const R = [
-    M('760493'), M('760495'), M('760497'), M('760496'),
-    M('760498'), M('760499'), M('760500'), M('760501'),
-  ];
-  // R16
-  const R16L = [M('760502'), M('760503'), M('760504'), M('760505')];
-  const R16R = [M('760506'), M('760507'), M('760509'), M('760508')];
-  // QF
-  const QFL = [M('760510'), M('760512')];
-  const QFR = [M('760511'), M('760513')];
-  // SF
-  const SF1 = M('760514'), SF2 = M('760515');
-  // Final + 3rd
-  const FINAL = M('760517'), THIRD = M('760516');
+  // RIGHT half
+  const r32_4  = M('760489'), r32_6  = M('760491'); // → R16-3 (760504)
+  const r32_7  = M('760488'), r32_8  = M('760494'); // → R16-4 (760505)
+  const r32_14 = M('760499'), r32_16 = M('760501'); // → R16-7 (760509)
+  const r32_13 = M('760498'), r32_15 = M('760500'); // → R16-8 (760508)
+  const r16_3  = M('760504'), r16_4  = M('760505'); // → QF-3  (760512)
+  const r16_7  = M('760509'), r16_8  = M('760508'); // → QF-4  (760513)
+  const qf3    = M('760512'), qf4    = M('760513'); // → SF-2  (760515)
+  const sf2    = M('760515');
 
-  const liveCount = (matchesData||[]).filter(m=>m.isLive).length;
+  // Centre
+  const final  = M('760517');
+  const third  = M('760516');
 
-  // Build the bracket HTML using CSS grid layout
-  // Structure: [R32-Left] [R16-Left] [QF-Left] [SF+Final+3rd] [QF-Right] [R16-Right] [R32-Right]
+  const liveCount = (matchesData||[]).filter(m => m.isLive).length;
 
-  const slotH = (matches, labels, showDate=true) =>
-    matches.map((m,i) => makeBSlot(m, labels[i]||'', showDate)).join('');
+  // ── helper: a labelled round column ─────────────────────────────────────
+  const col = (label, content, extraCls='') =>
+    `<div class="bcol ${extraCls}"><div class="bcol-hdr">${label}</div>${content}</div>`;
 
-  // spacer to vertically center pairs
-  const sp = (h) => `<div style="height:${h}px;flex-shrink:0;"></div>`;
+  // ── spacer div ───────────────────────────────────────────────────────────
+  const sp = h => `<div style="height:${h}px;flex-shrink:0"></div>`;
 
-  // Build each column as a flex column with spacing to align pairs
-  // R32: 8 slots, each pair feeds one R16 slot
-  // We need slots spaced so pairs visually bracket together
+  // ── connector column between two rounds ─────────────────────────────────
+  // Each connector shows 4 lines: top pair bracket + bottom pair bracket
+  // visually the right-edge of left round and left-edge of right round
+  const connL = (topSpanPx, midSpanPx) => `
+    <div class="bconn">
+      <div class="bconn-pair" style="height:${topSpanPx}px">
+        <div class="bconn-line bconn-top"></div>
+        <div class="bconn-line bconn-bot"></div>
+        <div class="bconn-arrow"></div>
+      </div>
+      <div style="height:${midSpanPx}px;flex-shrink:0"></div>
+      <div class="bconn-pair" style="height:${topSpanPx}px">
+        <div class="bconn-line bconn-top"></div>
+        <div class="bconn-line bconn-bot"></div>
+        <div class="bconn-arrow"></div>
+      </div>
+    </div>`;
 
-  let html = `
-    <div class="bracket-title">⚽ 2026 FIFA WORLD CUP BRACKET</div>
-    <div class="bracket-subtitle">
-      ${liveCount > 0 ? `<span style="color:var(--gold);font-weight:700;">🔴 ${liveCount} LIVE</span> · ` : ''}
-      Updates live · Click tabs for full match details
+  // ── single connector (one pair of slots → one slot) ──────────────────────
+  const conn1 = h => `
+    <div class="bconn" style="justify-content:center">
+      <div class="bconn-pair" style="height:${h}px">
+        <div class="bconn-line bconn-top"></div>
+        <div class="bconn-line bconn-bot"></div>
+        <div class="bconn-arrow"></div>
+      </div>
+    </div>`;
+
+  // ── slot heights (approx) ────────────────────────────────────────────────
+  // Each bs slot is ~62px tall. sp between slots.
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // LEFT HALF layout (top→bottom):
+  // R32 col: [r32_1] sp8 [r32_3] sp20 [r32_2] sp8 [r32_5] sp20 [r32_11] sp8 [r32_12] sp20 [r32_9] sp8 [r32_10]
+  // R16 col: sp35 [r16_1] sp14 [r16_2] sp14 [r16_5] sp14 [r16_6] sp35
+  // QF  col: sp80 [qf1] sp80 [qf2] sp80
+  // ═══════════════════════════════════════════════════════════════════════
+
+  const leftR32 = `
+    ${makeBSlot(r32_1,  {label:'R32-1'})}
+    ${sp(6)}
+    ${makeBSlot(r32_3,  {label:'R32-3'})}
+    ${sp(18)}
+    ${makeBSlot(r32_2,  {label:'R32-2'})}
+    ${sp(6)}
+    ${makeBSlot(r32_5,  {label:'R32-5'})}
+    ${sp(18)}
+    ${makeBSlot(r32_11, {label:'R32-11'})}
+    ${sp(6)}
+    ${makeBSlot(r32_12, {label:'R32-12'})}
+    ${sp(18)}
+    ${makeBSlot(r32_9,  {label:'R32-9'})}
+    ${sp(6)}
+    ${makeBSlot(r32_10, {label:'R32-10'})}`;
+
+  const leftR16 = `
+    ${sp(34)}
+    ${makeBSlot(r16_1, {label:'R16-1'})}
+    ${sp(12)}
+    ${makeBSlot(r16_2, {label:'R16-2'})}
+    ${sp(12)}
+    ${makeBSlot(r16_5, {label:'R16-5'})}
+    ${sp(12)}
+    ${makeBSlot(r16_6, {label:'R16-6'})}
+    ${sp(34)}`;
+
+  const leftQF = `
+    ${sp(104)}
+    ${makeBSlot(qf1, {label:'QF-1'})}
+    ${sp(28)}
+    ${makeBSlot(qf2, {label:'QF-2'})}
+    ${sp(104)}`;
+
+  const leftSF = `
+    ${sp(196)}
+    ${makeBSlot(sf1, {label:'SF-1'})}
+    ${sp(196)}`;
+
+  // ── RIGHT half (mirror) ──────────────────────────────────────────────────
+  const rightR32 = `
+    ${makeBSlot(r32_4,  {label:'R32-4'})}
+    ${sp(6)}
+    ${makeBSlot(r32_6,  {label:'R32-6'})}
+    ${sp(18)}
+    ${makeBSlot(r32_7,  {label:'R32-7'})}
+    ${sp(6)}
+    ${makeBSlot(r32_8,  {label:'R32-8'})}
+    ${sp(18)}
+    ${makeBSlot(r32_14, {label:'R32-14'})}
+    ${sp(6)}
+    ${makeBSlot(r32_16, {label:'R32-16'})}
+    ${sp(18)}
+    ${makeBSlot(r32_13, {label:'R32-13'})}
+    ${sp(6)}
+    ${makeBSlot(r32_15, {label:'R32-15'})}`;
+
+  const rightR16 = `
+    ${sp(34)}
+    ${makeBSlot(r16_3, {label:'R16-3'})}
+    ${sp(12)}
+    ${makeBSlot(r16_4, {label:'R16-4'})}
+    ${sp(12)}
+    ${makeBSlot(r16_7, {label:'R16-7'})}
+    ${sp(12)}
+    ${makeBSlot(r16_8, {label:'R16-8'})}
+    ${sp(34)}`;
+
+  const rightQF = `
+    ${sp(104)}
+    ${makeBSlot(qf3, {label:'QF-3'})}
+    ${sp(28)}
+    ${makeBSlot(qf4, {label:'QF-4'})}
+    ${sp(104)}`;
+
+  const rightSF = `
+    ${sp(196)}
+    ${makeBSlot(sf2, {label:'SF-2'})}
+    ${sp(196)}`;
+
+  // ── centre column ──────────────────────────────────────────────────────
+  const centre = `
+    ${sp(130)}
+    <div style="text-align:center;flex-shrink:0;">
+      <div style="font-size:0.6rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">🏆 Final</div>
+      ${makeBSlot(final, {label:'FINAL'})}
+      <div style="font-size:0.55rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 4px;">🥉 3rd Place</div>
+      ${makeBSlot(third, {label:'3rd'})}
     </div>
-    <div style="overflow-x:auto;">
-    <div style="display:flex;align-items:stretch;gap:2px;min-width:900px;padding:0 4px;">
+    ${sp(130)}`;
 
-      <!-- R32 LEFT (8 slots) -->
-      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;width:148px;">
-        <div class="bracket-col-label">Round of 32</div>
-        ${L.map((m,i) => makeBSlot(m, `R32-${i+1}`, true)).join('')}
+  // ── connector columns (visual lines) ─────────────────────────────────────
+  // Between R32 and R16: each pair of R32 slots brackets into one R16 slot
+  // Slot height ≈ 64px, gap between slots = 6px, gap between pairs = 18px
+  // Each pair spans: 64+6+64 = 134px; mid gap = 18px
+  const connR32toR16 = `
+    <div class="bconn-col">
+      ${sp(0)}
+      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
+      ${sp(18)}
+      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
+      ${sp(18)}
+      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
+      ${sp(18)}
+      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
+      ${sp(0)}
+    </div>`;
+
+  const connR16toQF = `
+    <div class="bconn-col">
+      ${sp(34)}
+      <div class="bconn-group" style="height:${64+12+64}px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
+      ${sp(12)}
+      <div class="bconn-group" style="height:${64+12+64}px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
+      ${sp(34)}
+    </div>`;
+
+  const connQFtoSF = `
+    <div class="bconn-col">
+      ${sp(104)}
+      <div class="bconn-group" style="height:${64+28+64}px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
+      ${sp(104)}
+    </div>`;
+
+  const connSFtoFinal = `
+    <div class="bconn-col bconn-col-narrow">
+      ${sp(196)}
+      <div class="bconn-group" style="height:${64}px;align-items:center;"><div class="bconn-line-h-only"></div></div>
+      ${sp(196)}
+    </div>`;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  const html = `
+    <div style="text-align:center;margin-bottom:12px;">
+      <div style="font-size:1rem;font-weight:900;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);">⚽ 2026 FIFA World Cup Bracket</div>
+      <div style="font-size:0.62rem;color:var(--muted);margin-top:3px;">
+        ${liveCount > 0
+          ? `<span style="color:var(--gold);font-weight:700;"><span style="display:inline-block;width:7px;height:7px;background:var(--gold);border-radius:50%;margin-right:3px;animation:pulse-dot 1s ease-in-out infinite;"></span>${liveCount} LIVE</span> · `
+          : ''}
+        Flag = country &nbsp;·&nbsp; Name = office pool owner &nbsp;·&nbsp; Auto-updates every hour
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;padding-bottom:8px;">
+    <div style="display:flex;align-items:flex-start;gap:0;min-width:980px;">
+
+      <!-- R32 LEFT -->
+      <div class="bcol">
+        <div class="bcol-hdr">Round of 32</div>
+        ${leftR32}
       </div>
 
-      <!-- R16 LEFT (4 slots) - vertically centered to pair with R32 -->
-      <div style="display:flex;flex-direction:column;flex-shrink:0;width:136px;">
-        <div class="bracket-col-label">Round of 16</div>
-        ${sp(8)}
-        ${makeBSlot(R16L[0], 'R16-1', true)}
-        ${sp(28)}
-        ${makeBSlot(R16L[1], 'R16-2', true)}
-        ${sp(28)}
-        ${makeBSlot(R16L[2], 'R16-3', true)}
-        ${sp(28)}
-        ${makeBSlot(R16L[3], 'R16-4', true)}
-        ${sp(8)}
+      <!-- CONN R32→R16 LEFT -->
+      <div class="bconn-col" style="padding-top:28px;">
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
+        ${sp(18)}
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
+        ${sp(18)}
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
+        ${sp(18)}
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
       </div>
 
-      <!-- QF LEFT (2 slots) -->
-      <div style="display:flex;flex-direction:column;flex-shrink:0;width:130px;">
-        <div class="bracket-col-label">Quarterfinals</div>
-        ${sp(52)}
-        ${makeBSlot(QFL[0], 'QF-1', true)}
-        ${sp(94)}
-        ${makeBSlot(QFL[1], 'QF-2', true)}
-        ${sp(52)}
+      <!-- R16 LEFT -->
+      <div class="bcol">
+        <div class="bcol-hdr">Round of 16</div>
+        ${leftR16}
       </div>
 
-      <!-- SF + FINAL + 3RD (center column) -->
-      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:148px;">
-        <div class="bracket-col-label">Semis · Final</div>
-        ${sp(20)}
-        ${makeBSlot(SF1, 'SF-1', true)}
-        ${sp(16)}
-        <!-- Trophy + Final -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0;">
-          <div style="font-size:2.4rem;">🏆</div>
-          <div style="font-size:0.58rem;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;">World Champions</div>
-          ${makeBSlot(FINAL, 'FINAL', true)}
-          <div style="font-size:0.58rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;">🥉 3rd Place</div>
-          ${makeBSlot(THIRD, '3rd Place', true)}
-        </div>
-        ${sp(16)}
-        ${makeBSlot(SF2, 'SF-2', true)}
-        ${sp(20)}
+      <!-- CONN R16→QF LEFT -->
+      <div class="bconn-col" style="padding-top:28px;">
+        ${sp(34)}
+        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
+        ${sp(12)}
+        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
+        ${sp(34)}
       </div>
 
-      <!-- QF RIGHT (2 slots) -->
-      <div style="display:flex;flex-direction:column;flex-shrink:0;width:130px;">
-        <div class="bracket-col-label">Quarterfinals</div>
-        ${sp(52)}
-        ${makeBSlot(QFR[0], 'QF-3', true)}
-        ${sp(94)}
-        ${makeBSlot(QFR[1], 'QF-4', true)}
-        ${sp(52)}
+      <!-- QF LEFT -->
+      <div class="bcol">
+        <div class="bcol-hdr">Quarters</div>
+        ${leftQF}
       </div>
 
-      <!-- R16 RIGHT (4 slots) -->
-      <div style="display:flex;flex-direction:column;flex-shrink:0;width:136px;">
-        <div class="bracket-col-label">Round of 16</div>
-        ${sp(8)}
-        ${makeBSlot(R16R[0], 'R16-5', true)}
-        ${sp(28)}
-        ${makeBSlot(R16R[1], 'R16-6', true)}
-        ${sp(28)}
-        ${makeBSlot(R16R[2], 'R16-7', true)}
-        ${sp(28)}
-        ${makeBSlot(R16R[3], 'R16-8', true)}
-        ${sp(8)}
+      <!-- CONN QF→SF LEFT -->
+      <div class="bconn-col" style="padding-top:28px;">
+        ${sp(104)}
+        <div class="bconn-group" style="height:${64+28+64}px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
+        ${sp(104)}
       </div>
 
-      <!-- R32 RIGHT (8 slots) -->
-      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;width:148px;">
-        <div class="bracket-col-label">Round of 32</div>
-        ${R.map((m,i) => makeBSlot(m, `R32-${i+9}`, true)).join('')}
+      <!-- SF LEFT -->
+      <div class="bcol bcol-narrow">
+        <div class="bcol-hdr">Semis</div>
+        ${leftSF}
+      </div>
+
+      <!-- CENTRE: SF→FINAL connectors + Final + 3rd -->
+      <div style="display:flex;flex-direction:column;flex-shrink:0;width:130px;padding-top:28px;">
+        ${centre}
+      </div>
+
+      <!-- SF RIGHT -->
+      <div class="bcol bcol-narrow">
+        <div class="bcol-hdr">Semis</div>
+        ${rightSF}
+      </div>
+
+      <!-- CONN SF←QF RIGHT -->
+      <div class="bconn-col" style="padding-top:28px;">
+        ${sp(104)}
+        <div class="bconn-group" style="height:${64+28+64}px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
+        ${sp(104)}
+      </div>
+
+      <!-- QF RIGHT -->
+      <div class="bcol">
+        <div class="bcol-hdr">Quarters</div>
+        ${rightQF}
+      </div>
+
+      <!-- CONN QF←R16 RIGHT -->
+      <div class="bconn-col" style="padding-top:28px;">
+        ${sp(34)}
+        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
+        ${sp(12)}
+        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
+        ${sp(34)}
+      </div>
+
+      <!-- R16 RIGHT -->
+      <div class="bcol">
+        <div class="bcol-hdr">Round of 16</div>
+        ${rightR16}
+      </div>
+
+      <!-- CONN R16←R32 RIGHT -->
+      <div class="bconn-col" style="padding-top:28px;">
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
+        ${sp(18)}
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
+        ${sp(18)}
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
+        ${sp(18)}
+        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
+      </div>
+
+      <!-- R32 RIGHT -->
+      <div class="bcol">
+        <div class="bcol-hdr">Round of 32</div>
+        ${rightR32}
       </div>
 
     </div>
     </div>
 
-    <div class="bracket-legend">
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid rgba(245,166,35,0.6);background:rgba(245,166,35,0.1);"></span> Live</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,208,132,0.4);background:rgba(0,208,132,0.08);"></span> Completed</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid rgba(107,117,144,0.4);background:rgba(107,117,144,0.05);opacity:0.5;"></span> TBD</span>
-      <span>👤 Office pool owner</span>
-      <span style="color:var(--green);font-weight:700;">Score in green</span> = winner
+    <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:0.62rem;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(245,166,35,0.7);background:rgba(245,166,35,0.12);display:inline-block;"></span>Live</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,208,132,0.5);background:rgba(0,208,132,0.08);display:inline-block;"></span>Completed</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid var(--border);opacity:0.4;display:inline-block;"></span>TBD</span>
+      <span>🟢 score = winner &nbsp;·&nbsp; name shown = office pool owner</span>
     </div>`;
 
   container.innerHTML = html;
