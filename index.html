@@ -784,7 +784,7 @@ Make the app visually stunning, professional, and clear. The leaderboard is the 
       <div class="trophy-icon">🏆</div>
       <div class="title-text">
         <h1>FIFA WORLD CUP 2026</h1>
-        <p>⚽ Office Pool Tracker &nbsp;·&nbsp; 48 Participants &nbsp;·&nbsp; Total Pot: $500</p>
+        <p>⚽ Office Pool Tracker &nbsp;·&nbsp; 48 Participants &nbsp;·&nbsp; Total Pot: $480</p>
       </div>
     </div>
     <div class="header-meta">
@@ -1387,7 +1387,7 @@ function renderLeaderboard() {
     html = '<div class="no-data"><div class="no-icon">📊</div>No data available yet.</div>';
   }
 
-  html += `<div class="total-pool">Total Pool Pot: <span>$500</span> &nbsp;·&nbsp; ${PARTICIPANTS.length} Participants &nbsp;·&nbsp; Prize payout: 🥇$220 · 🥈$120 · 🥉$70 · 🏅$40 · 🥄$30</div>`;
+  html += `<div class="total-pool">Total Pool Pot: <span>$480</span> &nbsp;·&nbsp; ${PARTICIPANTS.length} Participants &nbsp;·&nbsp; Prize payout: 🥇$220 · 🥈$120 · 🥉$70 · 🏅$40 · 🥄$30</div>`;
 
   container.innerHTML = html;
 }
@@ -1451,9 +1451,35 @@ function renderGroups() {
   let html = '';
   letters.forEach(letter => {
     const teams = [...(groupsData[letter] || [])].sort((a, b) => {
+      // 1) Total points
       const pa = a.pts || 0, pb = b.pts || 0;
       if (pb !== pa) return pb - pa;
-      return (b.gd || 0) - (a.gd || 0);
+
+      // 2) Head-to-head points between tied teams
+      const h2hPts = (teamA, teamB) => {
+        let pts = 0;
+        (matchesData || []).forEach(m => {
+          if (!m.isFinal) return;
+          const hN = normalizeTeamName(m.homeTeam), aN = normalizeTeamName(m.awayTeam);
+          const tAN = normalizeTeamName(teamA.name), tBN = normalizeTeamName(teamB.name);
+          if (hN === tAN && aN === tBN) {
+            const hs = parseInt(m.homeScore)||0, as_ = parseInt(m.awayScore)||0;
+            if (hs > as_) pts += 3; else if (hs === as_) pts += 1;
+          } else if (hN === tBN && aN === tAN) {
+            const hs = parseInt(m.homeScore)||0, as_ = parseInt(m.awayScore)||0;
+            if (as_ > hs) pts += 3; else if (hs === as_) pts += 1;
+          }
+        });
+        return pts;
+      };
+      const h2hA = h2hPts(a, b), h2hB = h2hPts(b, a);
+      if (h2hB !== h2hA) return h2hB - h2hA;
+
+      // 3) Goal difference
+      if ((b.gd || 0) !== (a.gd || 0)) return (b.gd || 0) - (a.gd || 0);
+
+      // 4) Goals for
+      return (b.gf || 0) - (a.gf || 0);
     });
 
     html += `<div class="group-card">
