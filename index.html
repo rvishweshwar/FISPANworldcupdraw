@@ -532,98 +532,136 @@
   }
   .odds-no-data { font-size: 0.75rem; color: var(--muted); text-align: center; padding: 10px 0; }
 
-  /* BRACKET TAB */
+  /* ── BRACKET TAB ─────────────────────────────────────────────── */
   #bracketWrap { overflow-x: auto; padding-bottom: 16px; }
 
-  /* Column */
+  /*
+   * The bracket uses a CSS-grid approach.
+   * Each "round" is a column of cells. Each cell is either a match slot
+   * or a spacer. Connectors are drawn purely with border on wrapper divs.
+   *
+   * Key principle: every slot has a FIXED height (--sh) so connectors
+   * can be sized in multiples of that height. We lock --sh via the slot.
+   */
+  :root { --sh: 62px; --sg: 8px; --cc: rgba(245,166,35,0.45); }
+
   .bcol {
     display: flex; flex-direction: column;
-    flex-shrink: 0; width: 112px;
+    flex-shrink: 0; width: 116px; gap: 0;
   }
-  .bcol-narrow { width: 112px; }
   .bcol-hdr {
-    text-align: center; font-size: 0.58rem; font-weight: 800;
+    text-align: center; font-size: 0.57rem; font-weight: 800;
     color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 0 0 8px; flex-shrink: 0;
+    height: 24px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
   }
 
-  /* Match slot */
+  /* ── match slot ── */
   .bs {
+    height: var(--sh);
     flex-shrink: 0;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 7px;
     background: var(--card);
     overflow: hidden;
+    display: flex; flex-direction: column;
     transition: border-color 0.2s;
+    box-sizing: border-box;
   }
-  .bs:hover { border-color: rgba(245,166,35,0.4); }
-  .bs-live { border-color: var(--gold); box-shadow: 0 0 8px rgba(245,166,35,0.25); animation: pulse-border 2s ease-in-out infinite; }
-  .bs-done { border-color: rgba(0,208,132,0.3); }
-  .bs-tbd  { border-color: rgba(107,117,144,0.2); opacity: 0.45; }
+  .bs:hover { border-color: rgba(245,166,35,0.45); }
+  .bs-live { border-color: var(--gold); box-shadow: 0 0 8px rgba(245,166,35,0.3); animation: pulse-border 2s ease-in-out infinite; }
+  .bs-done { border-color: rgba(0,208,132,0.35); }
+  .bs-tbd  { border-color: rgba(107,117,144,0.2); opacity: 0.4; }
 
   .bs-live-bar {
-    display: flex; align-items: center; gap: 4px;
-    background: rgba(245,166,35,0.15);
-    font-size: 0.5rem; font-weight: 900; color: var(--gold);
-    padding: 1px 5px; text-transform: uppercase; letter-spacing: 0.1em;
+    display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+    background: rgba(245,166,35,0.15); padding: 1px 5px;
+    font-size: 0.48rem; font-weight: 900; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em;
   }
-  .bs-live-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: var(--gold); flex-shrink: 0;
-    animation: pulse-dot 1s ease-in-out infinite;
-  }
-  .bs-date {
-    font-size: 0.48rem; color: var(--muted);
-    padding: 1px 5px; text-align: right;
-    background: rgba(255,255,255,0.02);
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
+  .bs-live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; animation: pulse-dot 1s ease-in-out infinite; }
+  .bs-date { font-size: 0.46rem; color: var(--muted); padding: 1px 5px; text-align:right; background: rgba(255,255,255,0.02); flex-shrink:0; }
   .bs-team {
-    display: flex; align-items: center; gap: 4px;
-    padding: 4px 5px; min-height: 26px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex; align-items: center; gap: 4px; flex: 1;
+    padding: 0 5px; min-height: 0; overflow: hidden;
   }
-  .bs-team:last-of-type { border-bottom: none; }
+  .bs-divider { height: 1px; background: rgba(255,255,255,0.07); flex-shrink: 0; }
   .bs-win  { background: rgba(0,208,132,0.1); }
-  .bs-lose { opacity: 0.4; }
-  .bs-flag { font-size: 0.95rem; flex-shrink: 0; line-height: 1; }
-  .bs-lbl  {
-    flex: 1; font-size: 0.62rem; font-weight: 600;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    color: var(--text);
-  }
-  .bs-score { font-size: 0.7rem; font-weight: 900; flex-shrink: 0; color: var(--muted); }
+  .bs-lose { opacity: 0.38; }
+  .bs-flag { font-size: 0.9rem; flex-shrink: 0; line-height: 1; }
+  .bs-lbl  { flex: 1; font-size: 0.6rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bs-score { font-size: 0.68rem; font-weight: 900; flex-shrink: 0; color: var(--muted); }
   .bs-score-win { color: var(--green); }
-  .bs-divider { height: 1px; background: rgba(255,255,255,0.06); flex-shrink: 0; }
 
-  /* Connector columns */
-  .bconn-col {
-    flex-shrink: 0; width: 18px;
+  /* gap spacer between slots in same column */
+  .bs-gap { flex-shrink: 0; }
+
+  /*
+   * ── Connectors ──────────────────────────────────────────────────
+   * Each connector column sits between two round columns.
+   * It contains "connector cells" — one per pair of slots that feed
+   * into the next round's single slot.
+   *
+   * A connector cell has:
+   *   - top half: right-border + no bottom border  → upper arm
+   *   - bottom half: right-border + no top border  → lower arm
+   *   - a horizontal stub in the middle
+   *
+   * We achieve this cleanly by splitting each cell into two halves
+   * using ::before / ::after, or simply using two child divs.
+   */
+  .bconn {
+    flex-shrink: 0; width: 16px;
     display: flex; flex-direction: column;
-    padding-top: 28px; /* align with slots below header */
+    padding-top: 24px; /* match bcol-hdr height */
   }
-  .bconn-group {
-    flex-shrink: 0; position: relative;
-    display: flex; align-items: center;
-  }
-  /* Vertical bar that spans the two slots */
-  .bconn-line-v {
-    position: absolute; width: 2px;
-    background: rgba(245,166,35,0.3);
-    top: 13px; bottom: 13px; /* inset from top and bottom of the group */
-  }
-  .bconn-line-v-l { right: 0; }
-  .bconn-line-v-r { left: 0; }
-  /* Horizontal bar going toward next round */
-  .bconn-line-h {
-    position: absolute; height: 2px;
-    background: rgba(245,166,35,0.3);
-    top: 50%;
-  }
-  .bconn-line-h-l { left: 50%; right: 0; }
-  .bconn-line-h-r { right: 50%; left: 0; }
 
-  .bracket-legend span { display: flex; align-items: center; gap: 4px; }
+  /*
+   * .bconn-cell wraps a PAIR of slots (top + gap + bottom).
+   * Its height = 2*--sh + gap between the pair.
+   * It draws:
+   *   left (for left-side): right border on top-half, right border on bottom-half,
+   *                         horizontal line at midpoint going right
+   *   right (for right-side): mirror
+   */
+  .bconn-cell {
+    flex-shrink: 0;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  /* top arm */
+  .bconn-cell .bca-top {
+    flex: 1;
+    border-color: var(--cc);
+    border-style: solid;
+    border-width: 0;
+    box-sizing: border-box;
+  }
+  /* bottom arm */
+  .bconn-cell .bca-bot {
+    flex: 1;
+    border-color: var(--cc);
+    border-style: solid;
+    border-width: 0;
+    box-sizing: border-box;
+  }
+  /* horizontal stub — absolutely centred */
+  .bconn-cell .bca-h {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    height: 2px;
+    background: var(--cc);
+    width: 100%;
+  }
+
+  /* LEFT-side connectors: vertical bars on RIGHT edge, stub goes right */
+  .bconn-l .bca-top  { border-right-width: 2px; border-top-width: 2px; }
+  .bconn-l .bca-bot  { border-right-width: 2px; border-bottom-width: 2px; }
+  .bconn-l .bca-h    { left: 50%; right: 0; width: 50%; }
+
+  /* RIGHT-side connectors: vertical bars on LEFT edge, stub goes left */
+  .bconn-r .bca-top  { border-left-width: 2px; border-top-width: 2px; }
+  .bconn-r .bca-bot  { border-left-width: 2px; border-bottom-width: 2px; }
+  .bconn-r .bca-h    { right: 50%; left: 0; width: 50%; }
 
   /* PREDICTIONS TAB */
   .predict-header-bar {
@@ -2326,411 +2364,311 @@ function renderOdds() {
 // FINAL (760517): SF-1W + SF-2W
 // 3RD  (760516): SF-1L + SF-2L
 
-function makeBSlot(match, opts) {
-  const { label='', mini=false, isFinalSlot=false } = opts || {};
-
+function makeBSlot(match) {
   if (!match) {
-    const h = mini ? 22 : 26;
-    return `<div class="bs bs-tbd" style="min-height:${h*2+2}px">
-      <div class="bs-team"><span class="bs-flag">—</span></div>
+    return `<div class="bs bs-tbd">
+      <div class="bs-team"><span class="bs-flag"></span><span class="bs-lbl" style="color:var(--muted)">TBD</span></div>
       <div class="bs-divider"></div>
-      <div class="bs-team"><span class="bs-flag">—</span></div>
+      <div class="bs-team"><span class="bs-flag"></span><span class="bs-lbl" style="color:var(--muted)">TBD</span></div>
     </div>`;
   }
-
-  const isLive = match.isLive;
-  const isDone = match.isFinal;
-  const hName  = match.homeTeam || '';
-  const aName  = match.awayTeam || '';
-  const hFlag  = getFlag(hName);
-  const aFlag  = getFlag(aName);
-  const hOwner = getOwner(hName);
-  const aOwner = getOwner(aName);
-  const hScore = (isDone || isLive) ? (match.homeScore ?? '') : '';
-  const aScore = (isDone || isLive) ? (match.awayScore ?? '') : '';
-  const hNum   = parseInt(hScore);
-  const aNum   = parseInt(aScore);
-  const hWin   = isDone && hNum > aNum;
-  const aWin   = isDone && aNum > hNum;
-  const isTBD  = n => !n || n.toLowerCase().includes('winner') || n.toLowerCase().includes('group')
-                          || n.toLowerCase().includes('place')  || n.toLowerCase().includes('loser')
-                          || n.toLowerCase().includes('3rd')    || n.toLowerCase().includes('round of');
-
+  const isLive = match.isLive, isDone = match.isFinal;
+  const hName = match.homeTeam||'', aName = match.awayTeam||'';
+  const hFlag = getFlag(hName)||'', aFlag = getFlag(aName)||'';
+  const hOwner = getOwner(hName), aOwner = getOwner(aName);
+  const hScore = (isDone||isLive) ? (match.homeScore??'') : '';
+  const aScore = (isDone||isLive) ? (match.awayScore??'') : '';
+  const hWin = isDone && parseInt(hScore) > parseInt(aScore);
+  const aWin = isDone && parseInt(aScore) > parseInt(hScore);
+  const isTBD = n => !n || /winner|group|place|loser|3rd|round of/i.test(n);
+  const dateStr = match.date ? new Date(match.date).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'}) : '';
   const slotCls = isLive ? 'bs-live' : isDone ? 'bs-done' : '';
-  const dateStr = match.date
-    ? new Date(match.date).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'})
-    : '';
-
-  const teamRow = (flag, name, owner, score, win, lose) => {
-    const f   = isTBD(name) ? '' : (flag || '');
-    const lbl = isTBD(name) ? '?' : (owner || (flag || '?'));
-    return `<div class="bs-team ${win?'bs-win':''} ${lose?'bs-lose':''}">
-      <span class="bs-flag">${f}</span>
-      <span class="bs-lbl">${lbl}</span>
-      ${(isDone||isLive) ? `<span class="bs-score ${win?'bs-score-win':''}">${score}</span>` : ''}
+  const teamRow = (flag, name, owner, score, win, lose) => `
+    <div class="bs-team ${win?'bs-win':''} ${lose?'bs-lose':''}">
+      <span class="bs-flag">${isTBD(name)?'':flag}</span>
+      <span class="bs-lbl">${isTBD(name) ? '?' : (owner || flag || '?')}</span>
+      ${score!=='' ? `<span class="bs-score ${win?'bs-score-win':''}">${score}</span>` : ''}
     </div>`;
-  };
-
   return `<div class="bs ${slotCls}">
-    ${isLive ? `<div class="bs-live-bar"><span class="bs-live-dot"></span>LIVE</div>` : (dateStr ? `<div class="bs-date">${dateStr}</div>` : '')}
-    ${teamRow(hFlag, hName, hOwner, hScore, hWin, aWin&&isDone)}
+    ${isLive
+      ? `<div class="bs-live-bar"><span class="bs-live-dot"></span>LIVE</div>`
+      : dateStr ? `<div class="bs-date">${dateStr}</div>` : ''}
+    ${teamRow(hFlag,hName,hOwner,hScore,hWin,aWin&&isDone)}
     <div class="bs-divider"></div>
-    ${teamRow(aFlag, aName, aOwner, aScore, aWin, hWin&&isDone)}
+    ${teamRow(aFlag,aName,aOwner,aScore,aWin,hWin&&isDone)}
   </div>`;
 }
 
-// Build a connector element (the lines between rounds)
-// type: 'bracket-r' (right-facing ⌐¬), 'bracket-l' (left-facing)
-// spans: how many slot heights this connector bridges
-function makeConn(type, spans) {
-  return `<div class="bc bc-${type}" style="--spans:${spans}"></div>`;
+// Build a connector column between two rounds.
+// side: 'l' (left half, bars on right) or 'r' (right half, bars on left)
+// cells: array of { h } where h = height in px for this connector cell
+function makeConnCol(side, cells) {
+  const inner = cells.map(({h}) => `
+    <div class="bconn-cell bconn-${side}" style="height:${h}px">
+      <div class="bca-top"></div>
+      <div class="bca-h"></div>
+      <div class="bca-bot"></div>
+    </div>`).join('');
+  return `<div class="bconn">${inner}</div>`;
 }
 
 function renderBracket() {
   const container = document.getElementById('bracketWrap');
-
   const byId = {};
-  (matchesData || []).forEach(m => { if (m.id) byId[String(m.id)] = m; });
+  (matchesData||[]).forEach(m => { if (m.id) byId[String(m.id)] = m; });
   const M = id => byId[String(id)] || null;
 
-  // ── All matches by role ──────────────────────────────────────────────────
-  // LEFT half
-  const r32_1  = M('760486'), r32_3  = M('760490'); // → R16-1 (760502)
-  const r32_2  = M('760487'), r32_5  = M('760492'); // → R16-2 (760503)
-  const r32_11 = M('760497'), r32_12 = M('760496'); // → R16-5 (760506)
-  const r32_9  = M('760493'), r32_10 = M('760495'); // → R16-6 (760507)
-  const r16_1  = M('760502'), r16_2  = M('760503'); // → QF-1  (760510)
-  const r16_5  = M('760506'), r16_6  = M('760507'); // → QF-2  (760511)
-  const qf1    = M('760510'), qf2    = M('760511'); // → SF-1  (760514)
-  const sf1    = M('760514');
+  // ── matches ──────────────────────────────────────────────────────────────
+  // LEFT half (feeds SF-1)
+  //   QF-1 ← R16-1 ← R32-1 + R32-3
+  //           R16-2 ← R32-2 + R32-5
+  //   QF-2 ← R16-5 ← R32-11 + R32-12
+  //           R16-6 ← R32-9  + R32-10
+  const r32 = {
+    L1: M('760486'), L2: M('760490'),   // → R16-1
+    L3: M('760487'), L4: M('760492'),   // → R16-2
+    L5: M('760497'), L6: M('760496'),   // → R16-5
+    L7: M('760493'), L8: M('760495'),   // → R16-6
+    R1: M('760489'), R2: M('760491'),   // → R16-3
+    R3: M('760488'), R4: M('760494'),   // → R16-4
+    R5: M('760499'), R6: M('760501'),   // → R16-7
+    R7: M('760498'), R8: M('760500'),   // → R16-8
+  };
+  const r16 = {
+    L1: M('760502'), L2: M('760503'),   // → QF-1
+    L3: M('760506'), L4: M('760507'),   // → QF-2
+    R1: M('760504'), R2: M('760505'),   // → QF-3
+    R3: M('760509'), R4: M('760508'),   // → QF-4
+  };
+  const qf = {
+    L1: M('760510'), L2: M('760511'),   // → SF-1
+    R1: M('760512'), R2: M('760513'),   // → SF-2
+  };
+  const sf1   = M('760514');
+  const sf2   = M('760515');
+  const final = M('760517');
+  const third = M('760516');
 
-  // RIGHT half
-  const r32_4  = M('760489'), r32_6  = M('760491'); // → R16-3 (760504)
-  const r32_7  = M('760488'), r32_8  = M('760494'); // → R16-4 (760505)
-  const r32_14 = M('760499'), r32_16 = M('760501'); // → R16-7 (760509)
-  const r32_13 = M('760498'), r32_15 = M('760500'); // → R16-8 (760508)
-  const r16_3  = M('760504'), r16_4  = M('760505'); // → QF-3  (760512)
-  const r16_7  = M('760509'), r16_8  = M('760508'); // → QF-4  (760513)
-  const qf3    = M('760512'), qf4    = M('760513'); // → SF-2  (760515)
-  const sf2    = M('760515');
+  const liveCount = (matchesData||[]).filter(m=>m.isLive).length;
 
-  // Centre
-  const final  = M('760517');
-  const third  = M('760516');
+  // ── fixed sizing (must match --sh and --sg in CSS) ───────────────────────
+  const SH = 62;  // slot height  (--sh)
+  const SG = 8;   // slot gap     (--sg)
+  const HDR = 24; // header height
 
-  const liveCount = (matchesData||[]).filter(m => m.isLive).length;
+  // Connector cell height for each transition:
+  // R32 → R16 : each pair of R32 slots (2×SH + 1×SG inner gap) + their outer gap
+  //   pair height = SH + SG + SH = 134  (the two slots + gap between them)
+  //   between pairs there's a "group gap" = SG (between pair 1 bottom and pair 2 top)
+  //   wait — actually groups of 2 share a SG, and groups are separated by SG
+  //   R32 layout: [L1][SG][L2][SG][L3][SG][L4][SG][L5][SG][L6][SG][L7][SG][L8]
+  //   R16 layout: [sp][L1][SG][L2][SG][L3][SG][L4][sp]  where sp = (SH+SG)/2
+  //
+  // For the connector between R32 and R16:
+  //   Each R16 slot is the result of 2 R32 slots.
+  //   The connector cell height = SH + SG + SH = 2*SH + SG
+  //   (spans from midpoint of top R32 slot to midpoint of bottom R32 slot)
+  //   That equals 2*62 + 8 = 132px
 
-  // ── helper: a labelled round column ─────────────────────────────────────
-  const col = (label, content, extraCls='') =>
-    `<div class="bcol ${extraCls}"><div class="bcol-hdr">${label}</div>${content}</div>`;
+  const C_R32_R16 = 2*SH + SG;       // 132px — height of one connector cell (2 R32 → 1 R16)
+  const C_R16_QF  = 2*SH + (2*SG + C_R32_R16); // spans 2 R16 slots + everything between them
+  // 2 R16 slots are separated by: the inter-group gap between the pairs
+  // R16 layout (4 slots): each slot vertically centred in its "zone" of 2 R32 slots
+  // distance between adjacent R16 slot centres = C_R32_R16 + SG (the gap between groups of 2)
+  // So R16→QF connector height = SH + (C_R32_R16 + SG) + SH = 2*SH + C_R32_R16 + SG
+  const C_R16_QF_H = 2*SH + C_R32_R16 + SG;    // = 2*62 + 132 + 8 = 264px
 
-  // ── spacer div ───────────────────────────────────────────────────────────
-  const sp = h => `<div style="height:${h}px;flex-shrink:0"></div>`;
+  // QF→SF: spans 2 QF slots
+  // QF slots are each centred in a zone of 2 R16 slots
+  // distance between QF slot centres = C_R16_QF_H + SG
+  const C_QF_SF_H = 2*SH + C_R16_QF_H + SG;    // = 2*62 + 264 + 8 = 396px
 
-  // ── connector column between two rounds ─────────────────────────────────
-  // Each connector shows 4 lines: top pair bracket + bottom pair bracket
-  // visually the right-edge of left round and left-edge of right round
-  const connL = (topSpanPx, midSpanPx) => `
-    <div class="bconn">
-      <div class="bconn-pair" style="height:${topSpanPx}px">
-        <div class="bconn-line bconn-top"></div>
-        <div class="bconn-line bconn-bot"></div>
-        <div class="bconn-arrow"></div>
+  // ── column builders ──────────────────────────────────────────────────────
+  // Build a round column: takes slots and gaps between them
+  // Layout is always: [slot][gap][slot][gap_large][slot][gap][slot]...
+  // For R32 (8 slots): alternating small gap (SG) between pairs, SG between pairs
+  // Actually all gaps are SG — 7 gaps between 8 slots
+
+  const colR32 = (slots) => {
+    let s = '';
+    slots.forEach((sl, i) => {
+      s += makeBSlot(sl);
+      if (i < slots.length - 1) s += `<div class="bs-gap" style="height:${SG}px"></div>`;
+    });
+    return s;
+  };
+
+  // For R16 (4 slots): each slot needs to be vertically centred within its 2-slot zone
+  // Zone height = C_R32_R16 = 132px, slot height = 62px → padding each side = (132-62)/2 = 35px
+  const pad16 = (C_R32_R16 - SH) / 2;  // 35px
+  const colR16 = (slots) => {
+    let s = '';
+    slots.forEach((sl, i) => {
+      s += `<div class="bs-gap" style="height:${pad16}px"></div>`;
+      s += makeBSlot(sl);
+      s += `<div class="bs-gap" style="height:${pad16}px"></div>`;
+      // gap between R16 slot groups = SG (same as R32 inter-slot gap)
+      if (i < slots.length - 1) s += `<div class="bs-gap" style="height:${SG}px"></div>`;
+    });
+    return s;
+  };
+
+  // For QF (2 slots): centred within their 2-slot R16 zone
+  const pad_qf = (C_R16_QF_H - SH) / 2;
+  const colQF = (slots) => {
+    let s = '';
+    slots.forEach((sl, i) => {
+      s += `<div class="bs-gap" style="height:${pad_qf}px"></div>`;
+      s += makeBSlot(sl);
+      s += `<div class="bs-gap" style="height:${pad_qf}px"></div>`;
+      if (i < slots.length - 1) s += `<div class="bs-gap" style="height:${SG}px"></div>`;
+    });
+    return s;
+  };
+
+  // For SF (1 slot): centred in its 2-QF zone
+  const pad_sf = (C_QF_SF_H - SH) / 2;
+  const colSF = (slot) =>
+    `<div class="bs-gap" style="height:${pad_sf}px"></div>` +
+    makeBSlot(slot) +
+    `<div class="bs-gap" style="height:${pad_sf}px"></div>`;
+
+  // ── connector cell heights ────────────────────────────────────────────────
+  // R32→R16: 4 connector cells, each height = C_R32_R16, separated by SG
+  const connR32R16_cells = [
+    {h: C_R32_R16}, {h: C_R32_R16}, {h: C_R32_R16}, {h: C_R32_R16}
+  ];
+  // But the connector column must also align with the padding that R16 adds.
+  // The first connector cell starts at the top of the first R32 slot.
+  // We need to pad-top the connector col by 0 (no header offset needed since
+  // we set padding-top: HDR on .bconn via CSS).
+  // Between connector cells: SG gap
+  const connCellsR32R16 = connR32R16_cells
+    .map(c => `<div class="bconn-cell bconn-SIDE" style="height:${c.h}px">
+        <div class="bca-top"></div><div class="bca-h"></div><div class="bca-bot"></div>
+      </div><div style="height:${SG}px;flex-shrink:0"></div>`)
+    .join('');
+
+  // R16→QF: 2 connector cells, height = C_R16_QF_H
+  // starts after pad16 offset (since R16 col starts with a pad)
+  const connR16QF_cells_h = C_R16_QF_H;
+  const connCellsR16QF = [0,1].map(_ =>
+    `<div class="bconn-cell bconn-SIDE" style="height:${connR16QF_cells_h}px">
+        <div class="bca-top"></div><div class="bca-h"></div><div class="bca-bot"></div>
+      </div><div style="height:${SG}px;flex-shrink:0"></div>`
+  ).join('');
+
+  // QF→SF: 1 connector cell, height = C_QF_SF_H
+  const connQFSF = `<div class="bconn-cell bconn-SIDE" style="height:${C_QF_SF_H}px">
+      <div class="bca-top"></div><div class="bca-h"></div><div class="bca-bot"></div>
+    </div>`;
+
+  // Build connector columns (left/right sides)
+  const makeConn = (side, cells_html) =>
+    `<div class="bconn" style="padding-top:${HDR}px">${cells_html.replace(/bconn-SIDE/g, `bconn-${side}`)}</div>`;
+
+  // ── total bracket height (for centre column alignment) ────────────────────
+  // 8 R32 slots + 7 SG gaps = 8*62 + 7*8 = 496 + 56 = 552px
+  const totalH = 8*SH + 7*SG;  // 552
+
+  // ── centre column: SF-1 → Final ← SF-2 ───────────────────────────────────
+  // SF slots are vertically at:
+  //   SF-1 top = pad_sf = (C_QF_SF_H - SH)/2 above centre of left side
+  // Both SF cols have same total height = totalH
+  // SF-1 centre y = pad_sf + SH/2
+  // We want the final slot centred between SF-1 and SF-2 centres, which is totalH/2
+  const centreCol = `
+    <div style="display:flex;flex-direction:column;flex-shrink:0;width:120px;padding-top:${HDR}px;">
+      <!-- top spacer to push Final to vertical centre -->
+      <div style="flex:1;min-height:0"></div>
+      <div style="text-align:center;margin-bottom:4px;">
+        <div style="font-size:0.55rem;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;">🏆 Final</div>
       </div>
-      <div style="height:${midSpanPx}px;flex-shrink:0"></div>
-      <div class="bconn-pair" style="height:${topSpanPx}px">
-        <div class="bconn-line bconn-top"></div>
-        <div class="bconn-line bconn-bot"></div>
-        <div class="bconn-arrow"></div>
+      ${makeBSlot(final)}
+      <div style="height:10px;flex-shrink:0"></div>
+      <div style="text-align:center;margin-bottom:4px;">
+        <div style="font-size:0.52rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">🥉 3rd Place</div>
       </div>
+      ${makeBSlot(third)}
+      <div style="flex:1;min-height:0"></div>
     </div>`;
 
-  // ── single connector (one pair of slots → one slot) ──────────────────────
-  const conn1 = h => `
-    <div class="bconn" style="justify-content:center">
-      <div class="bconn-pair" style="height:${h}px">
-        <div class="bconn-line bconn-top"></div>
-        <div class="bconn-line bconn-bot"></div>
-        <div class="bconn-arrow"></div>
-      </div>
+  // SF→Final connectors (simple horizontal lines, one from each side)
+  const sfFinalConn = (side) => `
+    <div class="bconn" style="padding-top:${HDR}px;width:12px;">
+      <div style="flex:1;min-height:0"></div>
+      <div style="height:2px;background:var(--cc);flex-shrink:0"></div>
+      <div style="flex:1;min-height:0"></div>
     </div>`;
 
-  // ── slot heights (approx) ────────────────────────────────────────────────
-  // Each bs slot is ~62px tall. sp between slots.
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // LEFT HALF layout (top→bottom):
-  // R32 col: [r32_1] sp8 [r32_3] sp20 [r32_2] sp8 [r32_5] sp20 [r32_11] sp8 [r32_12] sp20 [r32_9] sp8 [r32_10]
-  // R16 col: sp35 [r16_1] sp14 [r16_2] sp14 [r16_5] sp14 [r16_6] sp35
-  // QF  col: sp80 [qf1] sp80 [qf2] sp80
-  // ═══════════════════════════════════════════════════════════════════════
-
-  const leftR32 = `
-    ${makeBSlot(r32_1,  {label:'R32-1'})}
-    ${sp(6)}
-    ${makeBSlot(r32_3,  {label:'R32-3'})}
-    ${sp(18)}
-    ${makeBSlot(r32_2,  {label:'R32-2'})}
-    ${sp(6)}
-    ${makeBSlot(r32_5,  {label:'R32-5'})}
-    ${sp(18)}
-    ${makeBSlot(r32_11, {label:'R32-11'})}
-    ${sp(6)}
-    ${makeBSlot(r32_12, {label:'R32-12'})}
-    ${sp(18)}
-    ${makeBSlot(r32_9,  {label:'R32-9'})}
-    ${sp(6)}
-    ${makeBSlot(r32_10, {label:'R32-10'})}`;
-
-  const leftR16 = `
-    ${sp(34)}
-    ${makeBSlot(r16_1, {label:'R16-1'})}
-    ${sp(12)}
-    ${makeBSlot(r16_2, {label:'R16-2'})}
-    ${sp(12)}
-    ${makeBSlot(r16_5, {label:'R16-5'})}
-    ${sp(12)}
-    ${makeBSlot(r16_6, {label:'R16-6'})}
-    ${sp(34)}`;
-
-  const leftQF = `
-    ${sp(104)}
-    ${makeBSlot(qf1, {label:'QF-1'})}
-    ${sp(28)}
-    ${makeBSlot(qf2, {label:'QF-2'})}
-    ${sp(104)}`;
-
-  const leftSF = `
-    ${sp(196)}
-    ${makeBSlot(sf1, {label:'SF-1'})}
-    ${sp(196)}`;
-
-  // ── RIGHT half (mirror) ──────────────────────────────────────────────────
-  const rightR32 = `
-    ${makeBSlot(r32_4,  {label:'R32-4'})}
-    ${sp(6)}
-    ${makeBSlot(r32_6,  {label:'R32-6'})}
-    ${sp(18)}
-    ${makeBSlot(r32_7,  {label:'R32-7'})}
-    ${sp(6)}
-    ${makeBSlot(r32_8,  {label:'R32-8'})}
-    ${sp(18)}
-    ${makeBSlot(r32_14, {label:'R32-14'})}
-    ${sp(6)}
-    ${makeBSlot(r32_16, {label:'R32-16'})}
-    ${sp(18)}
-    ${makeBSlot(r32_13, {label:'R32-13'})}
-    ${sp(6)}
-    ${makeBSlot(r32_15, {label:'R32-15'})}`;
-
-  const rightR16 = `
-    ${sp(34)}
-    ${makeBSlot(r16_3, {label:'R16-3'})}
-    ${sp(12)}
-    ${makeBSlot(r16_4, {label:'R16-4'})}
-    ${sp(12)}
-    ${makeBSlot(r16_7, {label:'R16-7'})}
-    ${sp(12)}
-    ${makeBSlot(r16_8, {label:'R16-8'})}
-    ${sp(34)}`;
-
-  const rightQF = `
-    ${sp(104)}
-    ${makeBSlot(qf3, {label:'QF-3'})}
-    ${sp(28)}
-    ${makeBSlot(qf4, {label:'QF-4'})}
-    ${sp(104)}`;
-
-  const rightSF = `
-    ${sp(196)}
-    ${makeBSlot(sf2, {label:'SF-2'})}
-    ${sp(196)}`;
-
-  // ── centre column ──────────────────────────────────────────────────────
-  const centre = `
-    ${sp(130)}
-    <div style="text-align:center;flex-shrink:0;">
-      <div style="font-size:0.6rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">🏆 Final</div>
-      ${makeBSlot(final, {label:'FINAL'})}
-      <div style="font-size:0.55rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 4px;">🥉 3rd Place</div>
-      ${makeBSlot(third, {label:'3rd'})}
-    </div>
-    ${sp(130)}`;
-
-  // ── connector columns (visual lines) ─────────────────────────────────────
-  // Between R32 and R16: each pair of R32 slots brackets into one R16 slot
-  // Slot height ≈ 64px, gap between slots = 6px, gap between pairs = 18px
-  // Each pair spans: 64+6+64 = 134px; mid gap = 18px
-  const connR32toR16 = `
-    <div class="bconn-col">
-      ${sp(0)}
-      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
-      ${sp(18)}
-      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
-      ${sp(18)}
-      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
-      ${sp(18)}
-      <div class="bconn-group" style="height:134px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
-      ${sp(0)}
-    </div>`;
-
-  const connR16toQF = `
-    <div class="bconn-col">
-      ${sp(34)}
-      <div class="bconn-group" style="height:${64+12+64}px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
-      ${sp(12)}
-      <div class="bconn-group" style="height:${64+12+64}px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
-      ${sp(34)}
-    </div>`;
-
-  const connQFtoSF = `
-    <div class="bconn-col">
-      ${sp(104)}
-      <div class="bconn-group" style="height:${64+28+64}px"><div class="bconn-line-v"></div><div class="bconn-line-h"></div></div>
-      ${sp(104)}
-    </div>`;
-
-  const connSFtoFinal = `
-    <div class="bconn-col bconn-col-narrow">
-      ${sp(196)}
-      <div class="bconn-group" style="height:${64}px;align-items:center;"><div class="bconn-line-h-only"></div></div>
-      ${sp(196)}
-    </div>`;
-
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── assemble ──────────────────────────────────────────────────────────────
   const html = `
-    <div style="text-align:center;margin-bottom:12px;">
-      <div style="font-size:1rem;font-weight:900;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);">⚽ 2026 FIFA World Cup Bracket</div>
-      <div style="font-size:0.62rem;color:var(--muted);margin-top:3px;">
-        ${liveCount > 0
-          ? `<span style="color:var(--gold);font-weight:700;"><span style="display:inline-block;width:7px;height:7px;background:var(--gold);border-radius:50%;margin-right:3px;animation:pulse-dot 1s ease-in-out infinite;"></span>${liveCount} LIVE</span> · `
-          : ''}
-        Flag = country &nbsp;·&nbsp; Name = office pool owner &nbsp;·&nbsp; Auto-updates every hour
+    <div style="text-align:center;margin-bottom:10px;">
+      <div style="font-size:0.95rem;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold)">⚽ 2026 FIFA World Cup Bracket</div>
+      <div style="font-size:0.6rem;color:var(--muted);margin-top:3px;">
+        ${liveCount > 0 ? `<span style="color:var(--gold);font-weight:700"><span class="bs-live-dot" style="display:inline-block;margin-right:3px"></span>${liveCount} LIVE</span> · ` : ''}
+        Flag = country &nbsp;·&nbsp; Name = pool owner &nbsp;·&nbsp; Auto-updates hourly
       </div>
     </div>
 
     <div style="overflow-x:auto;padding-bottom:8px;">
-    <div style="display:flex;align-items:flex-start;gap:0;min-width:980px;">
+    <div style="display:flex;align-items:stretch;gap:0;min-width:1000px;">
 
       <!-- R32 LEFT -->
-      <div class="bcol">
-        <div class="bcol-hdr">Round of 32</div>
-        ${leftR32}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([r32.L1,r32.L2,r32.L3,r32.L4,r32.L5,r32.L6,r32.L7,r32.L8])}</div>
 
-      <!-- CONN R32→R16 LEFT -->
-      <div class="bconn-col" style="padding-top:28px;">
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
-        ${sp(18)}
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
-        ${sp(18)}
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
-        ${sp(18)}
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
-      </div>
+      ${makeConn('l', connCellsR32R16)}
 
       <!-- R16 LEFT -->
-      <div class="bcol">
-        <div class="bcol-hdr">Round of 16</div>
-        ${leftR16}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([r16.L1,r16.L2,r16.L3,r16.L4])}</div>
 
-      <!-- CONN R16→QF LEFT -->
-      <div class="bconn-col" style="padding-top:28px;">
-        ${sp(34)}
-        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
-        ${sp(12)}
-        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
-        ${sp(34)}
-      </div>
+      ${makeConn('l', connCellsR16QF)}
 
       <!-- QF LEFT -->
-      <div class="bcol">
-        <div class="bcol-hdr">Quarters</div>
-        ${leftQF}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([qf.L1,qf.L2])}</div>
 
-      <!-- CONN QF→SF LEFT -->
-      <div class="bconn-col" style="padding-top:28px;">
-        ${sp(104)}
-        <div class="bconn-group" style="height:${64+28+64}px;"><div class="bconn-line-v bconn-line-v-l"></div><div class="bconn-line-h bconn-line-h-l"></div></div>
-        ${sp(104)}
-      </div>
+      ${makeConn('l', connQFSF)}
 
       <!-- SF LEFT -->
-      <div class="bcol bcol-narrow">
-        <div class="bcol-hdr">Semis</div>
-        ${leftSF}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(sf1)}</div>
 
-      <!-- CENTRE: SF→FINAL connectors + Final + 3rd -->
-      <div style="display:flex;flex-direction:column;flex-shrink:0;width:130px;padding-top:28px;">
-        ${centre}
-      </div>
+      <!-- SF→FINAL left stub + Final col + SF→FINAL right stub -->
+      ${sfFinalConn('l')}
+      ${centreCol}
+      ${sfFinalConn('r')}
 
       <!-- SF RIGHT -->
-      <div class="bcol bcol-narrow">
-        <div class="bcol-hdr">Semis</div>
-        ${rightSF}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(sf2)}</div>
 
-      <!-- CONN SF←QF RIGHT -->
-      <div class="bconn-col" style="padding-top:28px;">
-        ${sp(104)}
-        <div class="bconn-group" style="height:${64+28+64}px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
-        ${sp(104)}
-      </div>
+      ${makeConn('r', connQFSF)}
 
       <!-- QF RIGHT -->
-      <div class="bcol">
-        <div class="bcol-hdr">Quarters</div>
-        ${rightQF}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([qf.R1,qf.R2])}</div>
 
-      <!-- CONN QF←R16 RIGHT -->
-      <div class="bconn-col" style="padding-top:28px;">
-        ${sp(34)}
-        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
-        ${sp(12)}
-        <div class="bconn-group" style="height:${64+12+64}px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
-        ${sp(34)}
-      </div>
+      ${makeConn('r', connCellsR16QF)}
 
       <!-- R16 RIGHT -->
-      <div class="bcol">
-        <div class="bcol-hdr">Round of 16</div>
-        ${rightR16}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([r16.R1,r16.R2,r16.R3,r16.R4])}</div>
 
-      <!-- CONN R16←R32 RIGHT -->
-      <div class="bconn-col" style="padding-top:28px;">
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
-        ${sp(18)}
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
-        ${sp(18)}
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
-        ${sp(18)}
-        <div class="bconn-group" style="height:134px;"><div class="bconn-line-v bconn-line-v-r"></div><div class="bconn-line-h bconn-line-h-r"></div></div>
-      </div>
+      ${makeConn('r', connCellsR32R16)}
 
       <!-- R32 RIGHT -->
-      <div class="bcol">
-        <div class="bcol-hdr">Round of 32</div>
-        ${rightR32}
-      </div>
+      <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([r32.R1,r32.R2,r32.R3,r32.R4,r32.R5,r32.R6,r32.R7,r32.R8])}</div>
 
     </div>
     </div>
 
     <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:0.62rem;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
-      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(245,166,35,0.7);background:rgba(245,166,35,0.12);display:inline-block;"></span>Live</span>
-      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,208,132,0.5);background:rgba(0,208,132,0.08);display:inline-block;"></span>Completed</span>
-      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid var(--border);opacity:0.4;display:inline-block;"></span>TBD</span>
-      <span>🟢 score = winner &nbsp;·&nbsp; name shown = office pool owner</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(245,166,35,0.7);background:rgba(245,166,35,0.1);display:inline-block"></span>Live now</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,208,132,0.5);background:rgba(0,208,132,0.08);display:inline-block"></span>Completed</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid var(--border);opacity:0.4;display:inline-block"></span>TBD</span>
+      <span><span style="color:var(--green);font-weight:700">Green score</span> = match winner</span>
+      <span>Name shown = office pool owner</span>
     </div>`;
 
   container.innerHTML = html;
 }
+
 
 // ─── PREDICTIONS ──────────────────────────────────────────────────────────────
 
