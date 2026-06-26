@@ -532,6 +532,85 @@
   }
   .odds-no-data { font-size: 0.75rem; color: var(--muted); text-align: center; padding: 10px 0; }
 
+  /* PREDICTIONS TAB */
+  .predict-header-bar {
+    background: linear-gradient(135deg, rgba(245,166,35,0.1), rgba(99,179,237,0.05));
+    border: 1px solid rgba(245,166,35,0.25);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .predict-header-bar strong { color: var(--gold); }
+  .predict-row {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 44px 1fr 130px 110px 110px 90px;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    margin-bottom: 6px;
+  }
+  .predict-row:hover { border-color: var(--card2); transform: translateY(-1px); }
+  .predict-row.predict-elim { opacity: 0.45; }
+  .predict-row.predict-top { border-color: rgba(245,166,35,0.4); background: linear-gradient(90deg, rgba(245,166,35,0.06), var(--card)); }
+  .predict-rank-num { font-size: 1.1rem; font-weight: 900; color: var(--muted); text-align: center; }
+  .predict-rank-num.r1 { color: #ffd700; }
+  .predict-rank-num.r2 { color: #c0c0c0; }
+  .predict-rank-num.r3 { color: #cd7f32; }
+  .predict-person { display: flex; flex-direction: column; gap: 2px; }
+  .predict-name { font-size: 0.88rem; font-weight: 700; }
+  .predict-team { font-size: 0.68rem; color: var(--muted); }
+  .predict-pts-block { display: flex; flex-direction: column; gap: 3px; }
+  .predict-pts-now { font-size: 0.72rem; color: var(--muted); }
+  .predict-pts-proj { font-size: 1rem; font-weight: 800; color: var(--green); }
+  .predict-pts-proj.elim-proj { color: var(--red); }
+  .predict-bar-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .predict-bar-label { font-size: 0.6rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .predict-bar-track { background: rgba(255,255,255,0.06); border-radius: 99px; height: 8px; overflow: hidden; }
+  .predict-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+  .predict-win-chance { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .predict-win-pct { font-size: 1.1rem; font-weight: 900; }
+  .predict-win-sub { font-size: 0.58rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .predict-prize-tag {
+    font-size: 0.68rem; font-weight: 700;
+    padding: 3px 8px; border-radius: 8px;
+    text-align: center; white-space: nowrap;
+  }
+  .prize-tag-1 { background: rgba(255,215,0,0.2); color: #ffd700; }
+  .prize-tag-2 { background: rgba(192,192,192,0.2); color: #c0c0c0; }
+  .prize-tag-3 { background: rgba(205,127,50,0.2); color: #cd7f32; }
+  .prize-tag-4 { background: rgba(99,179,237,0.15); color: #63b3ed; }
+  .prize-tag-last { background: rgba(255,127,132,0.15); color: var(--red); }
+  .prize-tag-none { background: rgba(107,117,144,0.1); color: var(--muted); }
+  .predict-section-label {
+    font-size: 0.65rem; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 8px 4px 4px;
+    border-top: 1px solid var(--border);
+    margin: 6px 0 4px;
+  }
+  .predict-methodology {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.8;
+  }
+  .predict-methodology strong { color: var(--text); }
+  @media (max-width: 700px) {
+    .predict-row { grid-template-columns: 36px 1fr 80px 70px; }
+    .predict-bar-wrap, .predict-pts-block { display: none; }
+  }
+
   /* FIXTURES ROUND HEADER */
   .round-header {
     display: flex;
@@ -888,6 +967,7 @@ Make the app visually stunning, professional, and clear. The leaderboard is the 
     <button class="tab-btn" onclick="switchTab('fixtures')">📅 Upcoming</button>
     <button class="tab-btn" onclick="switchTab('matches')">✅ Results</button>
     <button class="tab-btn" onclick="switchTab('odds')">🎰 Odds</button>
+    <button class="tab-btn" onclick="switchTab('predict')">🔮 Predictions</button>
   </div>
 </nav>
 
@@ -921,6 +1001,13 @@ Make the app visually stunning, professional, and clear. The leaderboard is the 
   <div id="tab-odds" class="tab-content">
     <div class="matches-grid" id="oddsGrid">
       <div class="no-data"><div class="no-icon">🎰</div>Loading odds…</div>
+    </div>
+  </div>
+
+  <!-- PREDICTIONS TAB -->
+  <div id="tab-predict" class="tab-content">
+    <div id="predictGrid">
+      <div class="no-data"><div class="no-icon">🔮</div>Loading predictions…</div>
     </div>
   </div>
 
@@ -1445,6 +1532,7 @@ function renderAll() {
   renderMatches();
   renderFixtures();
   renderOdds();
+  renderPredict();
 }
 
 function renderLeaderboard() {
@@ -2064,6 +2152,330 @@ function renderOdds() {
         </div>`;
     });
   });
+
+  container.innerHTML = html;
+}
+
+// ─── PREDICTIONS ──────────────────────────────────────────────────────────────
+
+// Convert American moneyline to win probability (0-1), accounting for vig
+function mlToProb(ml) {
+  if (!ml) return null;
+  const n = parseInt(ml);
+  if (isNaN(n)) return null;
+  return n > 0 ? 100 / (n + 100) : (-n) / (-n + 100);
+}
+
+// For each upcoming match, look up the odds and return { homeWinP, drawP, awayWinP }
+function getMatchProbs(match) {
+  if (!match.odds) return null;
+  const rawHome = mlToProb(match.odds.moneyline.home);
+  const rawDraw = mlToProb(match.odds.moneyline.draw);
+  const rawAway = mlToProb(match.odds.moneyline.away);
+  if (rawHome === null || rawAway === null) return null;
+  // Normalize to remove bookmaker vig
+  const total = (rawHome || 0) + (rawDraw || 0) + (rawAway || 0);
+  return {
+    homeWinP: rawHome / total,
+    drawP:    (rawDraw || 0) / total,
+    awayWinP: rawAway / total,
+  };
+}
+
+// Maximum possible additional pool points a team can still earn
+function maxRemainingBonus(team) {
+  if (!team) return 0;
+  const note = (team.note || '').toLowerCase();
+  if (note.includes('eliminat')) return 0;
+  const BONUS = KNOCKOUT_BONUS;
+  // Work out which bonuses already earned
+  const hasR32  = note.includes('advance') || note.includes('round of 32');
+  const hasR16  = note.includes('round of 16');
+  const hasQF   = note.includes('quarterfinal');
+  const hasSF   = note.includes('semifinal');
+  const has3rd  = note.includes('third') || note.includes('3rd');
+  const hasChamp= note.includes('champion');
+  if (hasChamp) return 0;
+  if (has3rd)   return 0;
+  if (hasSF)    return BONUS.champion; // could still win
+  if (hasQF)    return BONUS.semifinal + BONUS.champion;
+  if (hasR16)   return BONUS.quarterfinal + BONUS.semifinal + BONUS.champion;
+  if (hasR32)   return BONUS.round16 + BONUS.quarterfinal + BONUS.semifinal + BONUS.champion;
+  // Still in group stage — may not even advance
+  return BONUS.round32 + BONUS.round16 + BONUS.quarterfinal + BONUS.semifinal + BONUS.champion;
+}
+
+// Expected additional points from remaining group stage games (uses odds if available)
+function expectedGroupPts(teamName) {
+  const upcoming = matchesData.filter(m => !m.isFinal && (m.roundSlug === 'group-stage' || !m.roundSlug));
+  let expected = 0;
+  upcoming.forEach(m => {
+    const hN = normalizeTeamName(m.homeTeam);
+    const aN = normalizeTeamName(m.awayTeam);
+    const tN = normalizeTeamName(teamName);
+    if (hN !== tN && aN !== tN) return;
+    const probs = getMatchProbs(m);
+    if (!probs) {
+      // No odds: assume 33% win, 33% draw, 33% loss
+      expected += (0.33 * 3) + (0.33 * 1);
+    } else if (hN === tN) {
+      expected += (probs.homeWinP * 3) + (probs.drawP * 1);
+    } else {
+      expected += (probs.awayWinP * 3) + (probs.drawP * 1);
+    }
+  });
+  return expected;
+}
+
+// Expected knockout bonus given current status and odds for next match
+function expectedKnockoutBonus(team, teamName) {
+  if (!team) return 0;
+  const note = (team.note || '').toLowerCase();
+  if (note.includes('eliminat')) return 0;
+
+  const BONUS = KNOCKOUT_BONUS;
+
+  // Find next knockout match for this team
+  const nextKO = matchesData
+    .filter(m => !m.isFinal && m.roundSlug && m.roundSlug !== 'group-stage')
+    .find(m => normalizeTeamName(m.homeTeam) === normalizeTeamName(teamName) ||
+               normalizeTeamName(m.awayTeam) === normalizeTeamName(teamName));
+
+  // Win probability in next KO match
+  let winP = 0.5; // default 50/50
+  if (nextKO) {
+    const probs = getMatchProbs(nextKO);
+    if (probs) {
+      winP = normalizeTeamName(nextKO.homeTeam) === normalizeTeamName(teamName)
+        ? probs.homeWinP
+        : probs.awayWinP;
+    }
+  }
+
+  // Chain probabilities through each round with decaying win chances
+  // Already in R32: winP to reach R16, then 50% each subsequent round
+  const hasR32  = note.includes('advance') || note.includes('round of 32') || note.includes('round of');
+  const hasR16  = note.includes('round of 16');
+  const hasQF   = note.includes('quarterfinal');
+  const hasSF   = note.includes('semifinal');
+
+  let expected = 0;
+  let pSurvive = 1.0;
+
+  if (!hasR32 && !hasR16 && !hasQF && !hasSF) {
+    // In group, may or may not advance — use 0.5 chance to advance
+    pSurvive *= 0.5;
+    expected += pSurvive * BONUS.round32;
+    pSurvive *= winP; expected += pSurvive * BONUS.round16;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.quarterfinal;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.semifinal;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.champion;
+  } else if (hasR32 && !hasR16) {
+    pSurvive *= winP; expected += pSurvive * BONUS.round16;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.quarterfinal;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.semifinal;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.champion;
+  } else if (hasR16 && !hasQF) {
+    pSurvive *= winP; expected += pSurvive * BONUS.quarterfinal;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.semifinal;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.champion;
+  } else if (hasQF && !hasSF) {
+    pSurvive *= winP; expected += pSurvive * BONUS.semifinal;
+    pSurvive *= 0.5;  expected += pSurvive * BONUS.champion;
+  } else if (hasSF) {
+    pSurvive *= winP; expected += pSurvive * BONUS.champion;
+  }
+
+  return expected;
+}
+
+function renderPredict() {
+  const container = document.getElementById('predictGrid');
+
+  // Build prediction entries for each participant
+  const entries = PARTICIPANTS.map(p => {
+    const t = teamData[p.team];
+    const current = calcPoolPoints(t);
+    const isElim = !t || (t.note || '').toLowerCase().includes('eliminat');
+
+    // Expected additional points
+    const expGroup   = isElim ? 0 : expectedGroupPts(p.team);
+    const expKnockout= isElim ? 0 : expectedKnockoutBonus(t, p.team);
+    const projTotal  = current.pts + expGroup + expKnockout;
+    const maxTotal   = current.pts + maxRemainingBonus(t);
+
+    // Odds-based tournament win probability for this team (from moneyline if available in fixtures)
+    // Use the team's next match odds as a rough proxy for "strength"
+    const nextMatch = matchesData
+      .filter(m => !m.isFinal)
+      .find(m => normalizeTeamName(m.homeTeam) === normalizeTeamName(p.team) ||
+                 normalizeTeamName(m.awayTeam) === normalizeTeamName(p.team));
+
+    let strengthScore = 0.5;
+    if (nextMatch && nextMatch.odds) {
+      const probs = getMatchProbs(nextMatch);
+      if (probs) {
+        strengthScore = normalizeTeamName(nextMatch.homeTeam) === normalizeTeamName(p.team)
+          ? probs.homeWinP : probs.awayWinP;
+      }
+    }
+
+    return {
+      ...p,
+      ...current,
+      isElim,
+      projTotal: Math.round(projTotal * 10) / 10,
+      maxTotal:  Math.round(maxTotal),
+      strengthScore,
+      flag: FLAGS[p.team] || '🏳️',
+      status: isElim ? 'eliminated' : getTeamStatus(t),
+    };
+  });
+
+  // Sort by projected total DESC, then current pts, then GD
+  entries.sort((a, b) => {
+    if (b.projTotal !== a.projTotal) return b.projTotal - a.projTotal;
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    return (b.gd || 0) - (a.gd || 0);
+  });
+
+  // Assign predicted prize positions
+  const prizes = ['🥇 $220', '🥈 $120', '🥉 $70', '🏅 $40', null, null];
+  // Last place: lowest proj among all
+  const lastIdx = entries.length - 1;
+
+  // Normalize win chance 0-100 based on projTotal relative to max possible
+  const maxProj = entries[0].projTotal || 1;
+
+  // Compute "pot win %" as a Monte Carlo-lite: normalize projected scores
+  const totalProj = entries.reduce((s, e) => s + (e.isElim ? 0 : Math.max(e.projTotal, 0.1)), 0);
+
+  let html = `
+    <div class="predict-header-bar">
+      🔮 <strong>Prediction Engine</strong> — Rankings based on <strong>current pool points</strong> +
+      <strong>expected future points</strong> modelled from live DraftKings odds (win probabilities per match)
+      + knockout round survival chains. Eliminated teams shown at bottom. Updates every refresh. <em>Not financial advice!</em>
+    </div>`;
+
+  // Column headers
+  html += `
+    <div class="predict-row" style="background:transparent;border-color:transparent;font-size:0.62rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;padding:4px 18px;margin-bottom:0;">
+      <div></div>
+      <div>Participant</div>
+      <div>Projected Pts</div>
+      <div>Confidence</div>
+      <div>Pot Win %</div>
+      <div>Predicted Prize</div>
+    </div>`;
+
+  // Still in contention
+  const active = entries.filter(e => !e.isElim);
+  const elim   = entries.filter(e => e.isElim);
+
+  active.forEach((e, i) => {
+    const globalRank = i + 1;
+    const rankCls = globalRank === 1 ? 'r1' : globalRank === 2 ? 'r2' : globalRank === 3 ? 'r3' : '';
+    const isTop = globalRank <= 3;
+    const isLast = (i === active.length - 1 && elim.length === 0) || (i === entries.length - 1);
+
+    // Confidence bar: how far projTotal is to maxTotal
+    const confPct = e.maxTotal > 0 ? Math.min(100, Math.round((e.projTotal / e.maxTotal) * 100)) : 0;
+    const confColor = confPct >= 70 ? '#40916c' : confPct >= 40 ? '#f5a623' : '#e55';
+
+    // Pot win %
+    const potWinPct = totalProj > 0 ? Math.round((Math.max(e.projTotal, 0) / totalProj) * 100) : 0;
+    const barW = Math.round((e.projTotal / maxProj) * 100);
+
+    // Prize tag
+    let prizeTag = '', prizeTagCls = 'prize-tag-none';
+    if (globalRank === 1)      { prizeTag = '🥇 $220'; prizeTagCls = 'prize-tag-1'; }
+    else if (globalRank === 2) { prizeTag = '🥈 $120'; prizeTagCls = 'prize-tag-2'; }
+    else if (globalRank === 3) { prizeTag = '🥉 $70';  prizeTagCls = 'prize-tag-3'; }
+    else if (globalRank === 4) { prizeTag = '🏅 $40';  prizeTagCls = 'prize-tag-4'; }
+    else                       { prizeTag = '—';        prizeTagCls = 'prize-tag-none'; }
+
+    html += `
+      <div class="predict-row ${isTop ? 'predict-top' : ''}">
+        <div class="predict-rank-num ${rankCls}">${globalRank}</div>
+        <div class="predict-person">
+          <div class="predict-name">${e.flag} ${e.name}</div>
+          <div class="predict-team">${e.team} &nbsp;·&nbsp; Now: <strong style="color:var(--text)">${e.pts}pts</strong></div>
+        </div>
+        <div class="predict-pts-block">
+          <div class="predict-pts-now">Current: ${e.pts} pts</div>
+          <div class="predict-pts-proj">▲ ${e.projTotal} proj.</div>
+          <div style="font-size:0.6rem;color:var(--muted)">Max: ${e.maxTotal}</div>
+        </div>
+        <div class="predict-bar-wrap">
+          <div class="predict-bar-label">Ceiling used</div>
+          <div class="predict-bar-track">
+            <div class="predict-bar-fill" style="width:${confPct}%;background:${confColor};"></div>
+          </div>
+          <div style="font-size:0.65rem;font-weight:700;color:${confColor}">${confPct}%</div>
+        </div>
+        <div class="predict-win-chance">
+          <div class="predict-win-pct" style="color:${potWinPct >= 10 ? 'var(--green)' : potWinPct >= 5 ? 'var(--gold)' : 'var(--muted)'}">${potWinPct}%</div>
+          <div class="predict-win-sub">pot win</div>
+        </div>
+        <div>
+          <span class="predict-prize-tag ${prizeTagCls}">${prizeTag}</span>
+        </div>
+      </div>`;
+  });
+
+  // Last place prediction (lowest among active)
+  if (active.length > 0) {
+    const lastEntry = active[active.length - 1];
+    // Re-render last row with spoon tag
+    html = html.replace(
+      `<span class="predict-prize-tag prize-tag-none">—</span></div>\n      </div>`,
+      `<span class="predict-prize-tag prize-tag-last">🥄 $30</span></div>\n      </div>`
+    );
+  }
+
+  // Eliminated section
+  if (elim.length > 0) {
+    html += `<div class="predict-section-label">☠️ Eliminated (${elim.length}) — Final positions locked in</div>`;
+    elim.forEach((e, i) => {
+      const globalRank = active.length + i + 1;
+      html += `
+        <div class="predict-row predict-elim">
+          <div class="predict-rank-num" style="color:var(--red)">${globalRank}</div>
+          <div class="predict-person">
+            <div class="predict-name">${e.flag} ${e.name}</div>
+            <div class="predict-team">${e.team} &nbsp;·&nbsp; <span style="color:var(--red);font-weight:700">ELIM</span></div>
+          </div>
+          <div class="predict-pts-block">
+            <div class="predict-pts-now">Final: ${e.pts} pts</div>
+            <div class="predict-pts-proj elim-proj">GD: ${e.gd >= 0 ? '+' : ''}${e.gd}</div>
+          </div>
+          <div class="predict-bar-wrap">
+            <div class="predict-bar-label">Points scored</div>
+            <div class="predict-bar-track">
+              <div class="predict-bar-fill" style="width:${Math.round((e.pts/maxProj)*100)}%;background:#e55;"></div>
+            </div>
+          </div>
+          <div class="predict-win-chance">
+            <div class="predict-win-pct" style="color:var(--red)">0%</div>
+            <div class="predict-win-sub">pot win</div>
+          </div>
+          <div><span class="predict-prize-tag prize-tag-none">—</span></div>
+        </div>`;
+    });
+  }
+
+  // Methodology note
+  html += `
+    <div class="predict-methodology">
+      <strong>How predictions work:</strong><br>
+      📊 <strong>Current pts</strong> — actual pool points earned so far (W×3, D×1, + knockout bonuses)<br>
+      🎰 <strong>Odds model</strong> — DraftKings moneyline converted to win probabilities (vig-adjusted) for each remaining match<br>
+      ⚙️ <strong>Knockout chain</strong> — win probability cascaded through R32 → R16 → QF → SF → Final, each weighted by bonus pts<br>
+      📈 <strong>Projected total</strong> — current pts + expected group pts + expected knockout bonus<br>
+      🏆 <strong>Pot win %</strong> — each participant's projected pts as a share of all active participants' projected pts<br>
+      🎯 <strong>Confidence %</strong> — how much of their maximum possible score they're projected to reach<br>
+      <em style="color:var(--muted)">Updated every hour. Odds from DraftKings via ESPN.</em>
+    </div>`;
 
   container.innerHTML = html;
 }
