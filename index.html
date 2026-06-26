@@ -1175,8 +1175,9 @@ function parseMatches(events) {
     const away = competitors.find(c => c.homeAway === 'away') || competitors[1];
 
     const status = ev.status?.type?.name || '';
-    const isLive = status === 'STATUS_IN_PROGRESS';
-    const isFinal = status === 'STATUS_FINAL';
+    const state = competition?.status?.type?.state || ev.status?.type?.state || '';
+    const isLive = status === 'STATUS_IN_PROGRESS' || state === 'in';
+    const isFinal = status === 'STATUS_FINAL' || status === 'STATUS_FULL_TIME' || state === 'post';
 
     const homeTeam = normalizeTeamName(home?.team?.displayName || '');
     const awayTeam = normalizeTeamName(away?.team?.displayName || '');
