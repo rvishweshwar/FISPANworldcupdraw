@@ -802,8 +802,8 @@ Make the app visually stunning, professional, and clear. The leaderboard is the 
   <div class="tabs-inner">
     <button class="tab-btn active" onclick="switchTab('leaderboard')">🏆 Leaderboard</button>
     <button class="tab-btn" onclick="switchTab('groups')">📊 Group Standings</button>
-    <button class="tab-btn" onclick="switchTab('fixtures')">📅 Fixtures</button>
-    <button class="tab-btn" onclick="switchTab('matches')">⚽ Results</button>
+    <button class="tab-btn" onclick="switchTab('fixtures')">📅 Upcoming</button>
+    <button class="tab-btn" onclick="switchTab('matches')">✅ Results</button>
   </div>
 </nav>
 
@@ -1504,51 +1504,92 @@ function renderMatches() {
     return;
   }
 
-  // Show live first, then recent completed, then upcoming
+  const roundOrder = ['group-stage','round-of-32','round-of-16','quarterfinals','semifinals','3rd-place-match','final'];
+  const roundLabels = {
+    'group-stage':'🌍 Group Stage','round-of-32':'⚔️ Round of 32','round-of-16':'🔥 Round of 16',
+    'quarterfinals':'💥 Quarterfinals','semifinals':'🌟 Semifinals','3rd-place-match':'🥉 3rd Place Match','final':'🏆 Final'
+  };
+
+  // Live matches first (separate banner)
   const live = matchesData.filter(m => m.isLive);
-  const completed = matchesData.filter(m => m.isFinal).slice(0, 12);
-  const upcoming = matchesData.filter(m => !m.isFinal && !m.isLive).slice(0, 5);
-  const toShow = [...live, ...upcoming, ...completed].slice(0, 20);
+  // All completed, most recent first
+  const completed = matchesData.filter(m => m.isFinal).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (live.length === 0 && completed.length === 0) {
+    container.innerHTML = '<div class="no-data"><div class="no-icon">⏳</div>No completed results yet.</div>';
+    return;
+  }
 
   let html = '';
 
+  // Live section
   if (live.length > 0) {
-    html += `<div class="section-title" style="background:rgba(245,166,35,0.05);border-radius:10px;border:1px solid rgba(245,166,35,0.2);margin-bottom:4px;">🔴 LIVE NOW (${live.length} match${live.length>1?'es':''})</div>`;
+    html += `<div class="round-header" style="border-color:var(--gold)">
+      <span class="round-header-title">🔴 Live Now</span>
+      <span class="round-header-count">${live.length} match${live.length>1?'es':''}</span>
+    </div>`;
+    live.forEach(m => html += buildResultCard(m));
   }
 
-  toShow.forEach(m => {
-    const hFlag = getFlag(m.homeTeam);
-    const aFlag = getFlag(m.awayTeam);
-    const hOwner = getOwner(m.homeTeam);
-    const aOwner = getOwner(m.awayTeam);
-    const scoreDisplay = (m.isFinal || m.isLive) ? `${m.homeScore} – ${m.awayScore}` : 'vs';
-    const scoreClass = m.isLive ? 'live-score' : '';
-    const statusCls = m.isLive ? 'ms-live' : m.isFinal ? 'ms-final' : 'ms-sched';
+  // Group completed by round, display rounds from latest to earliest (Final first, group last)
+  const byRound = {};
+  completed.forEach(m => {
+    const slug = m.roundSlug || 'group-stage';
+    if (!byRound[slug]) byRound[slug] = [];
+    byRound[slug].push(m);
+  });
 
-    html += `
-      <div class="match-card ${m.isLive ? 'live' : ''}">
-        <div class="match-meta">
-          <div class="match-group">${m.group || 'Match'}</div>
-          <div class="match-date">${formatDate(m.date)}</div>
-          <div class="match-status ${statusCls}">${m.isLive ? '🔴 LIVE ' + (m.statusText||'') : m.isFinal ? '✅ FT' : '🕐 ' + (m.statusText||'Upcoming')}</div>
-        </div>
-        <div class="match-teams">
-          <div class="match-team text-right">
-            <div class="match-team-flag">${hFlag}</div>
-            <div class="match-team-name">${m.homeTeam}</div>
-            ${hOwner ? `<div class="match-owner">👤 ${hOwner}</div>` : ''}
-          </div>
-          <div class="match-score ${scoreClass}">${scoreDisplay}</div>
-          <div class="match-team">
-            <div class="match-team-flag">${aFlag}</div>
-            <div class="match-team-name">${m.awayTeam}</div>
-            ${aOwner ? `<div class="match-owner">👤 ${aOwner}</div>` : ''}
-          </div>
-        </div>
-      </div>`;
+  const sortedRounds = Object.keys(byRound).sort((a,b) => {
+    const ai = roundOrder.indexOf(a), bi = roundOrder.indexOf(b);
+    return (bi === -1 ? -99 : bi) - (ai === -1 ? -99 : ai);
+  });
+
+  sortedRounds.forEach(slug => {
+    const matches = byRound[slug];
+    const label = roundLabels[slug] || slug;
+    html += `<div class="round-header">
+      <span class="round-header-title">${label}</span>
+      <span class="round-header-count">${matches.length} match${matches.length>1?'es':''}</span>
+    </div>`;
+    matches.forEach(m => html += buildResultCard(m));
   });
 
   container.innerHTML = html;
+}
+
+function buildResultCard(m) {
+  const hFlag = getFlag(m.homeTeam);
+  const aFlag = getFlag(m.awayTeam);
+  const hOwner = getOwner(m.homeTeam);
+  const aOwner = getOwner(m.awayTeam);
+  const scoreDisplay = `${m.homeScore} – ${m.awayScore}`;
+  const scoreClass = m.isLive ? 'live-score' : '';
+  const statusCls = m.isLive ? 'ms-live' : 'ms-final';
+  const statusTxt = m.isLive ? `🔴 LIVE ${m.statusText||''}` : '✅ FT';
+  const hWin = m.isFinal && parseInt(m.homeScore) > parseInt(m.awayScore);
+  const aWin = m.isFinal && parseInt(m.awayScore) > parseInt(m.homeScore);
+  return `
+    <div class="match-card ${m.isLive ? 'live' : ''}">
+      <div class="match-meta">
+        <div class="match-group">${(m.roundSlug||'group-stage').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
+        <div class="match-date">${formatDate(m.date)}</div>
+        <div class="match-status ${statusCls}">${statusTxt}</div>
+        ${m.venue ? `<div class="fixture-venue">📍 ${m.venue}</div>` : ''}
+      </div>
+      <div class="match-teams">
+        <div class="match-team text-right">
+          <div class="match-team-flag">${hFlag}</div>
+          <div class="match-team-name" style="font-weight:${hWin?'900':'600'};color:${hWin?'var(--green)':'var(--text)'}">${m.homeTeam}</div>
+          ${hOwner ? `<div class="match-owner">👤 ${hOwner}</div>` : ''}
+        </div>
+        <div class="match-score ${scoreClass}">${scoreDisplay}</div>
+        <div class="match-team">
+          <div class="match-team-flag">${aFlag}</div>
+          <div class="match-team-name" style="font-weight:${aWin?'900':'600'};color:${aWin?'var(--green)':'var(--text)'}">${m.awayTeam}</div>
+          ${aOwner ? `<div class="match-owner">👤 ${aOwner}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
 }
 
 // ─── FIXTURES ─────────────────────────────────────────────────────────────────
@@ -1559,7 +1600,7 @@ function renderFixtures() {
     return;
   }
 
-  // Only upcoming (not yet finished) matches, sorted by date ascending
+  // Only upcoming/live (not finished) matches, sorted by date ascending
   const upcoming = matchesData
     .filter(m => !m.isFinal)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
