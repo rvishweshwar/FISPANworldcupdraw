@@ -449,6 +449,89 @@
   .match-score.live-score { color: var(--gold); }
   .match-owner { font-size: 0.62rem; color: var(--gold); margin-top: 2px; font-weight: 600; }
 
+  /* ODDS TAB */
+  .odds-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+  .odds-card:hover { border-color: var(--card2); transform: translateY(-1px); }
+  .odds-match-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .odds-match-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .odds-team-block { text-align: center; min-width: 80px; }
+  .odds-team-flag { font-size: 1.6rem; }
+  .odds-team-name { font-size: 0.78rem; font-weight: 700; margin-top: 2px; }
+  .odds-team-owner { font-size: 0.6rem; color: var(--gold); font-weight: 600; }
+  .odds-vs { font-size: 0.75rem; font-weight: 800; color: var(--muted); padding: 0 6px; }
+  .odds-meta { text-align: right; flex-shrink: 0; }
+  .odds-kickoff { font-size: 0.65rem; color: var(--muted); }
+  .odds-round { font-size: 0.62rem; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .odds-provider { font-size: 0.6rem; color: var(--muted); margin-top: 2px; }
+
+  .odds-bets-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .odds-bet-section {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .odds-bet-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .odds-bet-rows { display: flex; flex-direction: column; gap: 5px; }
+  .odds-bet-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .odds-bet-name { font-size: 0.72rem; font-weight: 600; color: var(--text); flex: 1; }
+  .odds-bet-line { font-size: 0.68rem; color: var(--muted); }
+  .odds-bet-val {
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    min-width: 52px;
+    text-align: center;
+  }
+  .odds-pos { background: rgba(0,208,132,0.15); color: var(--green); }
+  .odds-neg { background: rgba(245,166,35,0.15); color: var(--gold); }
+  .odds-fav { background: rgba(99,179,237,0.15); color: #63b3ed; }
+  .odds-disclaimer {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: center;
+    padding: 8px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .odds-no-data { font-size: 0.75rem; color: var(--muted); text-align: center; padding: 10px 0; }
+
   /* FIXTURES ROUND HEADER */
   .round-header {
     display: flex;
@@ -804,6 +887,7 @@ Make the app visually stunning, professional, and clear. The leaderboard is the 
     <button class="tab-btn" onclick="switchTab('groups')">📊 Group Standings</button>
     <button class="tab-btn" onclick="switchTab('fixtures')">📅 Upcoming</button>
     <button class="tab-btn" onclick="switchTab('matches')">✅ Results</button>
+    <button class="tab-btn" onclick="switchTab('odds')">🎰 Odds</button>
   </div>
 </nav>
 
@@ -830,6 +914,13 @@ Make the app visually stunning, professional, and clear. The leaderboard is the 
   <div id="tab-groups" class="tab-content">
     <div class="groups-grid" id="groupsGrid">
       <div class="no-data"><div class="no-icon">⏳</div>Loading groups…</div>
+    </div>
+  </div>
+
+  <!-- ODDS TAB -->
+  <div id="tab-odds" class="tab-content">
+    <div class="matches-grid" id="oddsGrid">
+      <div class="no-data"><div class="no-icon">🎰</div>Loading odds…</div>
     </div>
   </div>
 
@@ -1198,6 +1289,33 @@ function parseMatches(events) {
     const venueCity = venueObj.address?.city || '';
     const venue = venueName ? `${venueName}${venueCity ? ', ' + venueCity : ''}` : '';
 
+    // Extract odds from ESPN/DraftKings
+    const oddsRaw = competition?.odds?.[0] || null;
+    let odds = null;
+    if (oddsRaw) {
+      odds = {
+        provider: oddsRaw.provider?.displayName || 'DraftKings',
+        details: oddsRaw.details || '',
+        moneyline: {
+          home: oddsRaw.moneyline?.home?.close?.odds || oddsRaw.moneyline?.home?.open?.odds || null,
+          away: oddsRaw.moneyline?.away?.close?.odds || oddsRaw.moneyline?.away?.open?.odds || null,
+          draw: oddsRaw.moneyline?.draw?.close?.odds || oddsRaw.moneyline?.draw?.open?.odds || oddsRaw.drawOdds?.moneyLine || null,
+        },
+        spread: {
+          homeLine: oddsRaw.pointSpread?.home?.close?.line || oddsRaw.pointSpread?.home?.open?.line || null,
+          homeOdds: oddsRaw.pointSpread?.home?.close?.odds || oddsRaw.pointSpread?.home?.open?.odds || null,
+          awayLine: oddsRaw.pointSpread?.away?.close?.line || oddsRaw.pointSpread?.away?.open?.line || null,
+          awayOdds: oddsRaw.pointSpread?.away?.close?.odds || oddsRaw.pointSpread?.away?.open?.odds || null,
+        },
+        total: {
+          overLine: oddsRaw.total?.over?.close?.line || oddsRaw.total?.over?.open?.line || null,
+          overOdds: oddsRaw.total?.over?.close?.odds || oddsRaw.total?.over?.open?.odds || null,
+          underLine: oddsRaw.total?.under?.close?.line || oddsRaw.total?.under?.open?.line || null,
+          underOdds: oddsRaw.total?.under?.close?.odds || oddsRaw.total?.under?.open?.odds || null,
+        },
+      };
+    }
+
     return {
       id: ev.id,
       date: ev.date,
@@ -1210,6 +1328,7 @@ function parseMatches(events) {
       awayScore: away?.score || (isFinal || isLive ? '0' : '-'),
       isLive, isFinal,
       statusText: ev.status?.type?.shortDetail || status,
+      odds,
     };
   }).sort((a, b) => {
     if (a.isLive && !b.isLive) return -1;
@@ -1325,6 +1444,7 @@ function renderAll() {
   renderGroups();
   renderMatches();
   renderFixtures();
+  renderOdds();
 }
 
 function renderLeaderboard() {
@@ -1703,6 +1823,243 @@ function renderFixtures() {
               <div class="match-team-name" style="font-size:${m.awayTeam.length > 15 ? '0.68rem' : '0.82rem'}">${m.awayTeam}</div>
               ${aOwner ? `<div class="match-owner">👤 ${aOwner}</div>` : ''}
             </div>
+          </div>
+        </div>`;
+    });
+  });
+
+  container.innerHTML = html;
+}
+
+// ─── ODDS ─────────────────────────────────────────────────────────────────────
+function fmtOdds(val) {
+  if (val === null || val === undefined) return null;
+  const n = parseInt(val);
+  if (isNaN(n)) return String(val);
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
+function oddsClass(val) {
+  const n = parseInt(val);
+  if (isNaN(n)) return '';
+  return n > 0 ? 'odds-pos' : 'odds-neg';
+}
+
+// Convert American odds to implied probability %
+function impliedProb(val) {
+  const n = parseInt(val);
+  if (isNaN(n)) return null;
+  const prob = n > 0 ? (100 / (n + 100)) : ((-n) / (-n + 100));
+  return Math.round(prob * 100);
+}
+
+function renderOdds() {
+  const container = document.getElementById('oddsGrid');
+  if (!matchesData || matchesData.length === 0) {
+    container.innerHTML = '<div class="no-data"><div class="no-icon">🎰</div>No odds data available.</div>';
+    return;
+  }
+
+  // Only upcoming/live matches that have odds
+  const withOdds = matchesData
+    .filter(m => !m.isFinal && m.odds)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (withOdds.length === 0) {
+    container.innerHTML = '<div class="no-data"><div class="no-icon">🎰</div>No odds available for upcoming matches yet.</div>';
+    return;
+  }
+
+  const roundLabels = {
+    'group-stage':'🌍 Group Stage','round-of-32':'⚔️ Round of 32','round-of-16':'🔥 Round of 16',
+    'quarterfinals':'💥 Quarterfinals','semifinals':'🌟 Semifinals','3rd-place-match':'🥉 3rd Place','final':'🏆 Final'
+  };
+
+  // Group by round
+  const byRound = {};
+  withOdds.forEach(m => {
+    const slug = m.roundSlug || 'group-stage';
+    if (!byRound[slug]) byRound[slug] = [];
+    byRound[slug].push(m);
+  });
+
+  const roundOrder = ['group-stage','round-of-32','round-of-16','quarterfinals','semifinals','3rd-place-match','final'];
+  const sortedRounds = Object.keys(byRound).sort((a,b) => {
+    const ai = roundOrder.indexOf(a), bi = roundOrder.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  let html = `
+    <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:0.7rem;color:var(--muted);">
+      🎰 Odds via <strong style="color:var(--gold)">DraftKings</strong> (sourced from ESPN) &nbsp;·&nbsp; American odds format &nbsp;·&nbsp; Must be 19+ to bet &nbsp;·&nbsp; <em>For entertainment only</em>
+    </div>`;
+
+  sortedRounds.forEach(slug => {
+    const matches = byRound[slug];
+    const label = roundLabels[slug] || slug;
+
+    html += `<div class="round-header">
+      <span class="round-header-title">${label}</span>
+      <span class="round-header-count">${matches.length} match${matches.length > 1 ? 'es' : ''}</span>
+    </div>`;
+
+    matches.forEach(m => {
+      const o = m.odds;
+      const hFlag = getFlag(m.homeTeam);
+      const aFlag = getFlag(m.awayTeam);
+      const hOwner = getOwner(m.homeTeam);
+      const aOwner = getOwner(m.awayTeam);
+
+      // Moneyline
+      const mlHome = fmtOdds(o.moneyline.home);
+      const mlAway = fmtOdds(o.moneyline.away);
+      const mlDraw = fmtOdds(o.moneyline.draw);
+
+      // Spread
+      const spHomeLine = o.spread.homeLine || '';
+      const spHomeOdds = fmtOdds(o.spread.homeOdds);
+      const spAwayLine = o.spread.awayLine || '';
+      const spAwayOdds = fmtOdds(o.spread.awayOdds);
+
+      // Total
+      const totOverLine = o.total.overLine || '';
+      const totOverOdds = fmtOdds(o.total.overOdds);
+      const totUnderLine = o.total.underLine || '';
+      const totUnderOdds = fmtOdds(o.total.underOdds);
+
+      // Implied probabilities for visual bar
+      const probHome = impliedProb(o.moneyline.home);
+      const probAway = impliedProb(o.moneyline.away);
+      const probDraw = impliedProb(o.moneyline.draw);
+      const totalProb = (probHome||0) + (probDraw||0) + (probAway||0) || 100;
+      const pHome = Math.round(((probHome||0) / totalProb) * 100);
+      const pDraw  = Math.round(((probDraw||0)  / totalProb) * 100);
+      const pAway  = 100 - pHome - pDraw;
+
+      // Determine favourite
+      const favHome = parseInt(o.moneyline.home||0) < parseInt(o.moneyline.away||0);
+
+      html += `
+        <div class="odds-card">
+          <!-- Match header -->
+          <div class="odds-match-header">
+            <div class="odds-match-title">
+              <div class="odds-team-block">
+                <div class="odds-team-flag">${hFlag}</div>
+                <div class="odds-team-name" style="color:${favHome?'var(--text)':'var(--muted)'}">${m.homeTeam}</div>
+                ${hOwner ? `<div class="odds-team-owner">👤 ${hOwner}</div>` : ''}
+              </div>
+              <div class="odds-vs">VS</div>
+              <div class="odds-team-block">
+                <div class="odds-team-flag">${aFlag}</div>
+                <div class="odds-team-name" style="color:${!favHome?'var(--text)':'var(--muted)'}">${m.awayTeam}</div>
+                ${aOwner ? `<div class="odds-team-owner">👤 ${aOwner}</div>` : ''}
+              </div>
+            </div>
+            <div class="odds-meta">
+              <div class="odds-round">${label.replace(/^[^\w]+\s/,'')}</div>
+              <div class="odds-kickoff">${formatDate(m.date)}</div>
+              <div class="odds-provider">via ${o.provider}</div>
+            </div>
+          </div>
+
+          <!-- Win probability bar -->
+          <div style="display:flex;border-radius:6px;overflow:hidden;height:22px;gap:1px;">
+            <div style="width:${pHome}%;background:linear-gradient(90deg,#2d6a4f,#40916c);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:0.62rem;font-weight:800;color:#fff;">${pHome}%</span>
+            </div>
+            ${pDraw > 0 ? `<div style="width:${pDraw}%;background:#4a4a6a;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:0.6rem;font-weight:700;color:#ccc;">D ${pDraw}%</span>
+            </div>` : ''}
+            <div style="width:${pAway}%;background:linear-gradient(90deg,#6b4226,#9c6644);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:0.62rem;font-weight:800;color:#fff;">${pAway}%</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);margin-top:-4px;">
+            <span>${m.homeTeam}</span>
+            ${pDraw > 0 ? `<span>Draw</span>` : ''}
+            <span>${m.awayTeam}</span>
+          </div>
+
+          <!-- Top 5 bets grid -->
+          <div class="odds-bets-grid">
+
+            <!-- Moneyline -->
+            <div class="odds-bet-section">
+              <div class="odds-bet-label">💰 Moneyline (Win)</div>
+              <div class="odds-bet-rows">
+                ${mlHome ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">${hFlag} ${m.homeTeam}</span>
+                  <span class="odds-bet-val ${oddsClass(o.moneyline.home)}">${mlHome}</span>
+                </div>` : ''}
+                ${mlDraw ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">🤝 Draw</span>
+                  <span class="odds-bet-val odds-pos">${mlDraw}</span>
+                </div>` : ''}
+                ${mlAway ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">${aFlag} ${m.awayTeam}</span>
+                  <span class="odds-bet-val ${oddsClass(o.moneyline.away)}">${mlAway}</span>
+                </div>` : ''}
+              </div>
+            </div>
+
+            <!-- Spread -->
+            <div class="odds-bet-section">
+              <div class="odds-bet-label">📐 Spread (Handicap)</div>
+              <div class="odds-bet-rows">
+                ${spHomeLine && spHomeOdds ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">${hFlag} ${m.homeTeam}</span>
+                  <span class="odds-bet-line">${spHomeLine}</span>
+                  <span class="odds-bet-val ${oddsClass(o.spread.homeOdds)}">${spHomeOdds}</span>
+                </div>` : ''}
+                ${spAwayLine && spAwayOdds ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">${aFlag} ${m.awayTeam}</span>
+                  <span class="odds-bet-line">${spAwayLine}</span>
+                  <span class="odds-bet-val ${oddsClass(o.spread.awayOdds)}">${spAwayOdds}</span>
+                </div>` : ''}
+                ${(!spHomeLine && !spAwayLine) ? `<div class="odds-no-data">Not available</div>` : ''}
+              </div>
+            </div>
+
+            <!-- Over/Under -->
+            <div class="odds-bet-section">
+              <div class="odds-bet-label">⚽ Over / Under Goals</div>
+              <div class="odds-bet-rows">
+                ${totOverLine && totOverOdds ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">Over ${totOverLine.replace('o','')}</span>
+                  <span class="odds-bet-val ${oddsClass(o.total.overOdds)}">${totOverOdds}</span>
+                </div>` : ''}
+                ${totUnderLine && totUnderOdds ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">Under ${totUnderLine.replace('u','')}</span>
+                  <span class="odds-bet-val ${oddsClass(o.total.underOdds)}">${totUnderOdds}</span>
+                </div>` : ''}
+                ${(!totOverLine && !totUnderLine) ? `<div class="odds-no-data">Not available</div>` : ''}
+              </div>
+            </div>
+
+            <!-- Favourite summary -->
+            <div class="odds-bet-section">
+              <div class="odds-bet-label">📊 Market Summary</div>
+              <div class="odds-bet-rows">
+                <div class="odds-bet-row">
+                  <span class="odds-bet-name">🏆 Favourite</span>
+                  <span class="odds-bet-val odds-fav" style="font-size:0.65rem;">${o.details || (favHome ? m.homeTeam : m.awayTeam)}</span>
+                </div>
+                ${probHome ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">${hFlag} Win prob.</span>
+                  <span class="odds-bet-val odds-fav">${pHome}%</span>
+                </div>` : ''}
+                ${probDraw ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">🤝 Draw prob.</span>
+                  <span class="odds-bet-val odds-fav">${pDraw}%</span>
+                </div>` : ''}
+                ${probAway ? `<div class="odds-bet-row">
+                  <span class="odds-bet-name">${aFlag} Win prob.</span>
+                  <span class="odds-bet-val odds-fav">${pAway}%</span>
+                </div>` : ''}
+              </div>
+            </div>
+
           </div>
         </div>`;
     });
