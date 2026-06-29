@@ -1425,8 +1425,24 @@ function getTeamStatus(team) {
   });
   if (koLoss) return 'eliminated';
 
-  // "Best 8 advance" = still alive as a best-3rd candidate, not yet confirmed
-  if (note.includes('best') || note.includes('best 8')) return 'possible';
+  // "Best 8 advance" = 3rd-place finisher, only 8 of 12 advance.
+  // Once the R32 is populated with real teams, we can tell:
+  // if the team appears in an R32 match → they made it (active)
+  // if the team does NOT appear in any R32 match and R32 has started → eliminated
+  if (note.includes('best') || note.includes('best 8')) {
+    const r32Teams = new Set();
+    (matchesData || []).forEach(m => {
+      if (m.roundSlug === 'round-of-32') {
+        if (m.homeTeam) r32Teams.add(normalizeTeamName(m.homeTeam));
+        if (m.awayTeam) r32Teams.add(normalizeTeamName(m.awayTeam));
+      }
+    });
+    if (r32Teams.size > 0) {
+      // R32 is populated — check if this team is in it
+      return r32Teams.has(teamNorm) ? 'active' : 'eliminated';
+    }
+    return 'possible'; // R32 not started yet
+  }
 
   // Confirmed advanced to a knockout round
   if (note.includes('advance') || note.includes('round of') || note.includes('quarter') ||
@@ -2453,8 +2469,7 @@ function makeBSlot(match) {
 function renderBracket() {
   const container = document.getElementById('bracketWrap');
 
-  // ── Fully dynamic: derive bracket from matchesData ─────────────────────
-  // Sort each round's games by date (ESPN's canonical ordering)
+  // ── Fully dynamic: derive bracket from matchesData sorted by date ───────
   const bySlug = {};
   (matchesData || []).forEach(m => {
     const s = m.roundSlug || 'group-stage';
@@ -2463,7 +2478,7 @@ function renderBracket() {
   });
   const sortByDate = arr => (arr || []).slice().sort((a,b) => new Date(a.date) - new Date(b.date));
 
-  const r32 = sortByDate(bySlug['round-of-32']);   // 16 games
+  const r32 = sortByDate(bySlug['round-of-32']);   // 16 games, sorted by date
   const r16 = sortByDate(bySlug['round-of-16']);   // 8 games
   const qf  = sortByDate(bySlug['quarterfinals']); // 4 games
   const sf  = sortByDate(bySlug['semifinals']);     // 2 games
@@ -2472,47 +2487,47 @@ function renderBracket() {
 
   const G = (arr, i) => (arr && arr[i]) ? arr[i] : null;
 
-  // LEFT half (top→bottom): R32 games 0,2,1,4,8,10,9,11
-  // These map to R16 left games 0,1,4,5 → QF left 0,1 → SF 0
-  // RIGHT half: R32 games 3,5,6,7,12,14,13,15
-  // These map to R16 right games 2,3,6,7 → QF right 2,3 → SF 1
+  // R32 by date (indices 0-15):
+  // idx: 0=Can/SA  1=Jap/Bra  2=Ger/Par  3=Mar/Ned  4=Nor/CIV  5=Swe/Fra
+  //      6=Ecu/Mex  7=COD/Eng  8=Sen/Bel  9=Bos/USA  10=Aut/Esp  11=Cro/Por
+  //      12=Alg/Sui  13=Egy/Aus  14=CPV/Arg  15=Gha/Col
   //
-  // Bracket pairing (validated against ESPN event names):
-  //   R16[0] = R32[0] + R32[2]
-  //   R16[1] = R32[1] + R32[4]
-  //   R16[2] = R32[3] + R32[5]
-  //   R16[3] = R32[6] + R32[7]
-  //   R16[4] = R32[8] + R32[9]  ← note: R16[4] is sorted 5th by date = 760507
-  //   R16[5] = R32[10] + R32[11] ← R16[5] sorted 6th = 760506
-  //   R16[6] = R32[13] + R32[15] ← R16[6] sorted 7th = 760509
-  //   R16[7] = R32[12] + R32[14] ← R16[7] sorted 8th = 760508
-  //
-  // Left visual column R32 (paired top→bottom): [0,2], [1,4], [8,9], [10,11]
-  // Right visual column R32 (paired top→bottom): [3,5], [6,7], [13,15], [12,14]
+  // Verified R32→R16 pairing (from ESPN event names):
+  // LEFT  R16[0]: idx0 + idx2  (Can/SA + Ger/Par)       → R16-1 (760502)
+  // LEFT  R16[1]: idx3 + idx4  (Mar/Ned + Nor/CIV)       → R16-2 (760503)
+  // RIGHT R16[0]: idx1 + idx5  (Jap/Bra + Swe/Fra)       → R16-3 (760504) ← Brazil here!
+  // RIGHT R16[1]: idx6 + idx7  (Ecu/Mex + COD/Eng)       → R16-4 (760505)
+  // LEFT  R16[2]: idx8 + idx9  (Sen/Bel + Bos/USA)        → R16-5 (760507)
+  // LEFT  R16[3]: idx10 + idx11 (Aut/Esp + Cro/Por)       → R16-6 (760506)
+  // RIGHT R16[2]: idx13 + idx15 (Egy/Aus + Gha/Col)       → R16-7 (760509)
+  // RIGHT R16[3]: idx12 + idx14 (Alg/Sui + CPV/Arg)       → R16-8 (760508)
 
-  // LEFT half R32 slots (top to bottom, paired)
-  const L1 = G(r32,0);  const L2 = G(r32,2);   // → RL1 = R16[0]
-  const L3 = G(r32,1);  const L4 = G(r32,4);   // → RL2 = R16[1]
-  const L5 = G(r32,8);  const L6 = G(r32,9);   // → RL3 = R16[4]  (sorted as R16 game #5)
-  const L7 = G(r32,10); const L8 = G(r32,11);  // → RL4 = R16[5]  (sorted as R16 game #6)
+  // LEFT half R32 (top→bottom in visual column, paired):
+  const L1 = G(r32,0);  const L2 = G(r32,2);   // Pair 1 → RL1
+  const L3 = G(r32,3);  const L4 = G(r32,4);   // Pair 2 → RL2
+  const L5 = G(r32,8);  const L6 = G(r32,9);   // Pair 3 → RL3
+  const L7 = G(r32,10); const L8 = G(r32,11);  // Pair 4 → RL4
 
-  // RIGHT half R32 slots (top to bottom, paired)
-  const R1 = G(r32,3);  const R2 = G(r32,5);   // → RR1 = R16[2]
-  const R3 = G(r32,6);  const R4 = G(r32,7);   // → RR2 = R16[3]
-  const R5 = G(r32,13); const R6 = G(r32,15);  // → RR3 = R16[6]
-  const R7 = G(r32,12); const R8 = G(r32,14);  // → RR4 = R16[7]
+  // RIGHT half R32 (top→bottom):
+  const R1 = G(r32,1);  const R2 = G(r32,5);   // Pair 5 → RR1 (Brazil + Swe/Fra)
+  const R3 = G(r32,6);  const R4 = G(r32,7);   // Pair 6 → RR2
+  const R5 = G(r32,13); const R6 = G(r32,15);  // Pair 7 → RR3
+  const R7 = G(r32,12); const R8 = G(r32,14);  // Pair 8 → RR4
 
-  // R16 slots
+  // R16 sorted by date: [0]=760502 [1]=760503 [2]=760504 [3]=760505
+  //                     [4]=760506 [5]=760507 [6]=760509 [7]=760508
+  // LEFT R16 (top→bottom): R16[0], R16[1], R16[5], R16[4]
+  // RIGHT R16 (top→bottom): R16[2], R16[3], R16[6], R16[7]
   const RL1 = G(r16,0); const RL2 = G(r16,1);
-  const RL3 = G(r16,4); const RL4 = G(r16,5);
+  const RL3 = G(r16,5); const RL4 = G(r16,4);
   const RR1 = G(r16,2); const RR2 = G(r16,3);
   const RR3 = G(r16,6); const RR4 = G(r16,7);
 
-  // QF slots
+  // QF sorted by date: [0]=760510 [1]=760511 [2]=760512 [3]=760513
+  // LEFT QF: [0],[1]  RIGHT QF: [2],[3]
   const QL1 = G(qf,0); const QL2 = G(qf,1);
   const QR1 = G(qf,2); const QR2 = G(qf,3);
 
-  // SF + Final
   const SF1   = G(sf,0);
   const SF2   = G(sf,1);
   const FINAL = fin;
@@ -2535,11 +2550,8 @@ function renderBracket() {
 
   const sp = h => `<div style="height:${h}px;flex-shrink:0"></div>`;
 
-  // ── Column builders ─────────────────────────────────────────────────────
   const colR32 = slots =>
-    slots.map((s, i) =>
-      makeBSlot(s) + (i < slots.length - 1 ? sp(SG) : '')
-    ).join('');
+    slots.map((s, i) => makeBSlot(s) + (i < slots.length - 1 ? sp(SG) : '')).join('');
 
   const colR16 = slots =>
     slots.map((s, i) =>
@@ -2553,7 +2565,6 @@ function renderBracket() {
 
   const colSF = slot => sp(PADSF) + makeBSlot(slot) + sp(PADSF);
 
-  // ── Connector column builder ─────────────────────────────────────────────
   const connCol = (side, cells) => {
     const inner = cells.map((h, i) =>
       `<div class="bconn-cell bconn-${side}" style="height:${h}px">
@@ -2572,9 +2583,8 @@ function renderBracket() {
   const connR16QFR  = connCol('r', [QUAD, QUAD]);
   const connQFSFR   = connCol('r', [OCT]);
 
-  const sfConnW = 14;
   const sfConn = () =>
-    `<div style="width:${sfConnW}px;flex-shrink:0;padding-top:${HDR}px;display:flex;flex-direction:column;">
+    `<div style="width:14px;flex-shrink:0;padding-top:${HDR}px;display:flex;flex-direction:column;">
       <div style="flex:1"></div>
       <div style="height:2px;background:rgba(245,166,35,0.45)"></div>
       <div style="flex:1"></div>
@@ -2595,17 +2605,13 @@ function renderBracket() {
     <div style="text-align:center;margin-bottom:10px;">
       <div style="font-size:0.95rem;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold)">⚽ 2026 FIFA World Cup — Knockout Bracket</div>
       <div style="font-size:0.6rem;color:var(--muted);margin-top:3px;">
-        ${liveCount > 0
-          ? `<span style="color:var(--gold);font-weight:700"><span class="bs-live-dot" style="display:inline-block;margin-right:3px;vertical-align:middle"></span>${liveCount} LIVE</span> · `
-          : ''}
+        ${liveCount > 0 ? `<span style="color:var(--gold);font-weight:700"><span class="bs-live-dot" style="display:inline-block;margin-right:3px;vertical-align:middle"></span>${liveCount} LIVE</span> · ` : ''}
         Flag = country &nbsp;·&nbsp; Name = pool owner &nbsp;·&nbsp; Updates hourly
       </div>
     </div>
-
     <div style="overflow-x:auto;padding-bottom:8px;">
     <div style="display:flex;align-items:flex-start;gap:0;min-width:1060px;">
-
-      <!-- ── LEFT HALF ─────────────────────────────── -->
+      <!-- LEFT HALF -->
       <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([L1,L2,L3,L4,L5,L6,L7,L8])}</div>
       ${connR32R16L}
       <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([RL1,RL2,RL3,RL4])}</div>
@@ -2613,13 +2619,11 @@ function renderBracket() {
       <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([QL1,QL2])}</div>
       ${connQFSFL}
       <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(SF1)}</div>
-
-      <!-- ── CENTRE ────────────────────────────────── -->
+      <!-- CENTRE -->
       ${sfConn()}
       ${centreCol}
       ${sfConn()}
-
-      <!-- ── RIGHT HALF ────────────────────────────── -->
+      <!-- RIGHT HALF -->
       <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(SF2)}</div>
       ${connQFSFR}
       <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([QR1,QR2])}</div>
@@ -2627,10 +2631,8 @@ function renderBracket() {
       <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([RR1,RR2,RR3,RR4])}</div>
       ${connR32R16R}
       <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([R1,R2,R3,R4,R5,R6,R7,R8])}</div>
-
     </div>
     </div>
-
     <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:0.62rem;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
       <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(245,166,35,0.7);background:rgba(245,166,35,0.1);display:inline-block"></span>Live</span>
       <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,208,132,0.5);background:rgba(0,208,132,0.08);display:inline-block"></span>Completed</span>
