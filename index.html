@@ -2473,86 +2473,75 @@ function makeBSlot(match) {
 function renderBracket() {
   const container = document.getElementById('bracketWrap');
 
-  // ── Use ESPN bracketLocation to sort games into correct bracket positions ─
-  // bracketLocation is ESPN's canonical bracket slot number (1-16 for R32, etc.)
-  // Left half = slots 1-8, Right half = slots 9-16
+  // ── Hardcoded ESPN event IDs matching the official 2026 WC bracket ─────
+  // Verified against FOX Sports bracket image and ESPN bracketLocation data
+  const byId = {};
+  (matchesData || []).forEach(m => { if (m.id) byId[String(m.id)] = m; });
+  const M = id => byId[String(id)] || null;
 
-  const bySlug = {};
-  (matchesData || []).forEach(m => {
-    const s = m.roundSlug || 'group-stage';
-    if (!bySlug[s]) bySlug[s] = [];
-    bySlug[s].push(m);
-  });
+  // LEFT HALF (top → bottom, 8 R32 slots)
+  const L1 = M('760489'); // Germany vs Paraguay
+  const L2 = M('760492'); // France vs Sweden
+  const L3 = M('760486'); // South Africa vs Canada    ← Canada + NED/MAR in R16!
+  const L4 = M('760488'); // Netherlands vs Morocco
+  const L5 = M('760496'); // Portugal vs Croatia
+  const L6 = M('760497'); // Spain vs Austria
+  const L7 = M('760494'); // USA vs Bosnia
+  const L8 = M('760493'); // Belgium vs Senegal
 
-  // Sort by ESPN bracketLocation if available, else fall back to date
-  const byBracketLoc = arr => (arr || []).slice().sort((a, b) => {
-    const aLoc = a.bracketLocation || 999;
-    const bLoc = b.bracketLocation || 999;
-    if (aLoc !== bLoc) return aLoc - bLoc;
-    return new Date(a.date) - new Date(b.date);
-  });
+  // RIGHT HALF (top → bottom, 8 R32 slots)
+  const R1 = M('760487'); // Brazil vs Japan            ← Brazil on RIGHT
+  const R2 = M('760490'); // Ivory Coast vs Norway
+  const R3 = M('760491'); // Mexico vs Ecuador
+  const R4 = M('760495'); // England vs Congo DR
+  const R5 = M('760500'); // Argentina vs Cape Verde
+  const R6 = M('760499'); // Australia vs Egypt
+  const R7 = M('760498'); // Switzerland vs Algeria
+  const R8 = M('760501'); // Colombia vs Ghana
 
-  const r32 = byBracketLoc(bySlug['round-of-32']);   // 16 games, slots 1-16
-  const r16 = byBracketLoc(bySlug['round-of-16']);   // 8 games, slots 1-8
-  const qf  = byBracketLoc(bySlug['quarterfinals']); // 4 games
-  const sf  = byBracketLoc(bySlug['semifinals']);     // 2 games
-  const fin = (bySlug['final'] || [])[0] || null;
-  const trd = (bySlug['3rd-place-match'] || [])[0] || null;
+  // R16 — adjacent pairs feed into same R16 slot
+  const RL1 = M('760503'); // L1+L2 winners: Ger/Par + Fra/Swe
+  const RL2 = M('760502'); // L3+L4 winners: Canada + Ned/Mar
+  const RL3 = M('760506'); // L5+L6 winners: Por/Cro + Esp/Aut
+  const RL4 = M('760507'); // L7+L8 winners: USA/Bos + Bel/Sen
+  const RR1 = M('760504'); // R1+R2 winners: Brazil + CIV/Nor
+  const RR2 = M('760505'); // R3+R4 winners: Mex/Ecu + Eng/COD
+  const RR3 = M('760509'); // R5+R6 winners: Arg/CPV + Aus/Egy
+  const RR4 = M('760508'); // R7+R8 winners: Sui/Alg + Col/Gha
 
-  const G = (arr, i) => (arr && arr[i]) ? arr[i] : null;
+  // QF
+  const QL1 = M('760510'); // RL1W + RL2W
+  const QL2 = M('760511'); // RL3W + RL4W
+  const QR1 = M('760512'); // RR1W + RR2W
+  const QR2 = M('760513'); // RR3W + RR4W
 
-  // ESPN bracketLocation order (verified from bracket page):
-  // R32: slot 1=Ger/Par, 2=Fra/Swe, 3=Can/SA, 4=Ned/Mar, 5=Por/Cro, 6=Esp/Aut
-  //      7=USA/Bos, 8=Bel/Sen, 9=Bra/Jap, 10=CIV/Nor, 11=Mex/Ecu, 12=Eng/COD
-  //      13=Arg/CPV, 14=Aus/Egy, 15=Sui/Alg, 16=Col/Gha
-  //
-  // LEFT HALF (slots 1-8, top→bottom in visual):
-  // Pairs: [1,2]→R16-1, [3,4]→R16-2, [5,6]→R16-3, [7,8]→R16-4
-  // RIGHT HALF (slots 9-16, top→bottom):
-  // Pairs: [9,10]→R16-5, [11,12]→R16-6, [13,14]→R16-7, [15,16]→R16-8
-
-  // r32 is now sorted by bracketLocation: index 0=slot1, 1=slot2, ... 15=slot16
-  const L1 = G(r32,0);  const L2 = G(r32,1);   // Ger/Par + Fra/Swe  → RL1
-  const L3 = G(r32,2);  const L4 = G(r32,3);   // Can/SA  + Ned/Mar  → RL2 ← Canada + NED/MAR!
-  const L5 = G(r32,4);  const L6 = G(r32,5);   // Por/Cro + Esp/Aut  → RL3
-  const L7 = G(r32,6);  const L8 = G(r32,7);   // USA/Bos + Bel/Sen  → RL4
-
-  const R1 = G(r32,8);  const R2 = G(r32,9);   // Bra/Jap + CIV/Nor  → RR1
-  const R3 = G(r32,10); const R4 = G(r32,11);  // Mex/Ecu + Eng/COD  → RR2
-  const R5 = G(r32,12); const R6 = G(r32,13);  // Arg/CPV + Aus/Egy  → RR3
-  const R7 = G(r32,14); const R8 = G(r32,15);  // Sui/Alg + Col/Gha  → RR4
-
-  // R16 bracketLocation: 1=R16-1(R32-1+2), 2=R16-2(Can+NED/MAR), 3=R16-3, 4=R16-4 (LEFT)
-  //                      5=R16-5(Bra), 6=R16-6, 7=R16-7, 8=R16-8 (RIGHT)
-  const RL1 = G(r16,0); const RL2 = G(r16,1);  // LEFT R16 top pair
-  const RL3 = G(r16,2); const RL4 = G(r16,3);  // LEFT R16 bottom pair
-  const RR1 = G(r16,4); const RR2 = G(r16,5);  // RIGHT R16 top pair
-  const RR3 = G(r16,6); const RR4 = G(r16,7);  // RIGHT R16 bottom pair
-
-  // QF: bracketLocation 1,2 = left; 3,4 = right
-  const QL1 = G(qf,0); const QL2 = G(qf,1);
-  const QR1 = G(qf,2); const QR2 = G(qf,3);
-
-  const SF1 = G(sf,0); const SF2 = G(sf,1);
-  const FINAL = fin; const THIRD = trd;
+  // SF + Final
+  const SF1   = M('760514'); // QL1W + QL2W
+  const SF2   = M('760515'); // QR1W + QR2W
+  const FINAL = M('760517');
+  const THIRD = M('760516');
 
   const liveCount = (matchesData || []).filter(m => m.isLive).length;
 
+  // ── Layout constants ────────────────────────────────────────────────────
   const SH = 62, SG = 8, HDR = 24;
-  const PAIR = SH + SG + SH;
-  const QUAD = PAIR + SG + PAIR;
-  const OCT  = QUAD + SG + QUAD;
-  const PAD16 = (PAIR - SH) / 2;
-  const PADQF = (QUAD - SH) / 2;
-  const PADSF = (OCT  - SH) / 2;
+  const PAIR = SH + SG + SH;        // 132
+  const QUAD = PAIR + SG + PAIR;    // 272
+  const OCT  = QUAD + SG + QUAD;    // 552
+  const PAD16 = (PAIR - SH) / 2;   //  35
+  const PADQF = (QUAD - SH) / 2;   // 105
+  const PADSF = (OCT  - SH) / 2;   // 245
   const sp = h => `<div style="height:${h}px;flex-shrink:0"></div>`;
 
   const colR32 = slots =>
-    slots.map((s,i) => makeBSlot(s) + (i < slots.length-1 ? sp(SG) : '')).join('');
+    slots.map((s,i) => makeBSlot(s) + (i<slots.length-1 ? sp(SG) : '')).join('');
+
   const colR16 = slots =>
     slots.map((s,i) => sp(PAD16)+makeBSlot(s)+sp(PAD16)+(i<slots.length-1?sp(SG):'')).join('');
+
   const colQF = slots =>
     slots.map((s,i) => sp(PADQF)+makeBSlot(s)+sp(PADQF)+(i<slots.length-1?sp(SG):'')).join('');
+
   const colSF = slot => sp(PADSF)+makeBSlot(slot)+sp(PADSF);
 
   const connCol = (side, cells) => {
