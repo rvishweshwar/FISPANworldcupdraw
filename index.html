@@ -1372,7 +1372,12 @@ function calcPoolPoints(team) {
 
   // Add knockout bonuses based on advancement note
   const note = (team.note || '').toLowerCase();
-  const advancedToR32 = note.includes('advance to round of 32') || note.includes('round of 32') || note.includes('advance');
+  // Strict R32 check: only teams explicitly confirmed into Round of 32.
+  // Must NOT match "Best 8 advance" (potential best 3rd-place teams — NOT confirmed yet).
+  const advancedToR32 = note.includes('advance to round of 32')
+    || (note.includes('round of 32') && !note.includes('best'));
+
+
   const advancedToR16 = note.includes('round of 16') || note.includes('r16');
   const advancedToQF = note.includes('quarterfinal') || note.includes('quarter-final') || note.includes('qf');
   const advancedToSF = note.includes('semifinal') || note.includes('semi-final') || note.includes('sf');
@@ -2708,7 +2713,8 @@ function maxRemainingBonus(team) {
   const note = (team.note || '').toLowerCase();
   if (note.includes('eliminat')) return 0;
   const B = KNOCKOUT_BONUS;
-  const hasR32 = note.includes('advance') || note.includes('round of 32') || note.includes('round of');
+  // Strict: "Best 8 advance" teams are NOT confirmed R32 yet — treat as group stage still
+  const hasR32 = (note.includes('advance to round of 32') || (note.includes('round of 32') && !note.includes('best'))) && !note.includes('round of 16');
   const hasR16 = note.includes('round of 16');
   const hasQF  = note.includes('quarterfinal');
   const hasSF  = note.includes('semifinal');
@@ -2719,7 +2725,7 @@ function maxRemainingBonus(team) {
   if (hasQF)  return B.semifinal + B.champion;
   if (hasR16) return B.quarterfinal + B.semifinal + B.champion;
   if (hasR32) return B.round16 + B.quarterfinal + B.semifinal + B.champion;
-  // Still in group stage
+  // Still in group stage (or "Best 8 advance" — not yet confirmed)
   return B.round32 + B.round16 + B.quarterfinal + B.semifinal + B.champion;
 }
 
@@ -2762,7 +2768,8 @@ function expectedKnockoutBonus(team, teamName) {
   if (note.includes('eliminat')) return 0;
 
   const B = KNOCKOUT_BONUS;
-  const hasR32  = note.includes('advance') || note.includes('round of 32') || note.includes('round of');
+  // Strict: "Best 8 advance" teams are NOT confirmed R32 yet — treat as group stage
+  const hasR32  = (note.includes('advance to round of 32') || (note.includes('round of 32') && !note.includes('best'))) && !note.includes('round of 16');
   const hasR16  = note.includes('round of 16');
   const hasQF   = note.includes('quarterfinal');
   const hasSF   = note.includes('semifinal');
