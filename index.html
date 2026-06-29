@@ -1399,9 +1399,34 @@ function calcPoolPoints(team) {
 function getTeamStatus(team) {
   if (!team) return 'unknown';
   const note = (team.note || '').toLowerCase();
+
+  // Hard eliminated by standings
   if (note.includes('eliminat')) return 'eliminated';
-  if (note.includes('best') || note.includes('possible') || note.includes('may advance') || note.includes('best 8')) return 'possible';
-  if (note.includes('advance') || note.includes('round of') || note.includes('quarter') || note.includes('semi') || note.includes('final') || note.includes('champion')) return 'active';
+
+  // Check if this team played in a completed knockout match and lost
+  const teamNorm = normalizeTeamName(team.name || '');
+  const koLoss = (matchesData || []).some(m => {
+    if (!m.isFinal) return false;
+    if (!m.roundSlug || m.roundSlug === 'group-stage') return false;
+    const hN = normalizeTeamName(m.homeTeam);
+    const aN = normalizeTeamName(m.awayTeam);
+    if (hN !== teamNorm && aN !== teamNorm) return false;
+    const hS = parseInt(m.homeScore) || 0;
+    const aS = parseInt(m.awayScore) || 0;
+    // In 3rd place match a loss doesn't mean eliminated from prize
+    if (m.roundSlug === '3rd-place-match') return false;
+    if (hN === teamNorm) return aS > hS;
+    return hS > aS;
+  });
+  if (koLoss) return 'eliminated';
+
+  // "Best 8 advance" = still alive as a best-3rd candidate, not yet confirmed
+  if (note.includes('best') || note.includes('best 8')) return 'possible';
+
+  // Confirmed advanced to a knockout round
+  if (note.includes('advance') || note.includes('round of') || note.includes('quarter') ||
+      note.includes('semi') || note.includes('final') || note.includes('champion')) return 'active';
+
   return 'unknown';
 }
 
@@ -2350,19 +2375,33 @@ function renderOdds() {
 }
 
 // ─── BRACKET ──────────────────────────────────────────────────────────────────
-// Official 2026 WC bracket progression (verified from ESPN event names):
-// LEFT HALF → SF-1 (760514):
-//   QF-1 (760510): R16-1 (760502) ← R32-1(760486) + R32-3(760490)
-//                  R16-2 (760503) ← R32-2(760487) + R32-5(760492)
-//   QF-2 (760511): R16-5 (760506) ← R32-11(760497) + R32-12(760496)
-//                  R16-6 (760507) ← R32-9(760493)  + R32-10(760495)
-// RIGHT HALF → SF-2 (760515):
-//   QF-3 (760512): R16-3 (760504) ← R32-4(760489)  + R32-6(760491)
-//                  R16-4 (760505) ← R32-7(760488)   + R32-8(760494)
-//   QF-4 (760513): R16-7 (760509) ← R32-14(760499) + R32-16(760501)
-//                  R16-8 (760508) ← R32-13(760498)  + R32-15(760500)
-// FINAL (760517): SF-1W + SF-2W
-// 3RD  (760516): SF-1L + SF-2L
+//
+// VERIFIED 2026 WC bracket tree (from ESPN event data):
+//
+// LEFT HALF → SF-1 (760514)
+//   QF-1 (760510) ← R16-1 (760502): R32-1(760486) vs R32-3(760489)
+//                   R16-2 (760503): R32-2(760487) vs R32-5(760490)
+//   QF-2 (760511) ← R16-5 (760506): R32-11(760497) vs R32-12(760496)
+//                   R16-6 (760507): R32-9(760493)  vs R32-10(760494)
+//
+// RIGHT HALF → SF-2 (760515)
+//   QF-3 (760512) ← R16-3 (760504): R32-4(760488) vs R32-6(760492)
+//                   R16-4 (760505): R32-7(760491)  vs R32-8(760495)
+//   QF-4 (760513) ← R16-7 (760509): R32-14(760499) vs R32-16(760501)
+//                   R16-8 (760508): R32-13(760498)  vs R32-15(760500)
+//
+// FINAL (760517): SF-1W vs SF-2W
+// 3RD   (760516): SF-1L vs SF-2L
+//
+// Actual teams (from ESPN live data June 29):
+//   760486: South Africa vs Canada         760487: Brazil vs Japan
+//   760489: Germany vs Paraguay            760488: Netherlands vs Morocco
+//   760490: Ivory Coast vs Norway          760492: France vs Sweden
+//   760491: Mexico vs Ecuador              760495: England vs Congo DR
+//   760493: Belgium vs Senegal             760494: USA vs Bosnia
+//   760497: Spain vs Austria               760496: Portugal vs Croatia
+//   760498: Switzerland vs Algeria         760499: Australia vs Egypt
+//   760500: Argentina vs Cape Verde        760501: Colombia vs Ghana
 
 function makeBSlot(match) {
   if (!match) {
@@ -2373,300 +2412,260 @@ function makeBSlot(match) {
     </div>`;
   }
   const isLive = match.isLive, isDone = match.isFinal;
-  const hName = match.homeTeam||'', aName = match.awayTeam||'';
-  const hFlag = getFlag(hName)||'', aFlag = getFlag(aName)||'';
-  const hOwner = getOwner(hName), aOwner = getOwner(aName);
-  const hScore = (isDone||isLive) ? (match.homeScore??'') : '';
-  const aScore = (isDone||isLive) ? (match.awayScore??'') : '';
-  const hWin = isDone && parseInt(hScore) > parseInt(aScore);
-  const aWin = isDone && parseInt(aScore) > parseInt(hScore);
-  const isTBD = n => !n || /winner|group|place|loser|3rd|round of/i.test(n);
-  const dateStr = match.date ? new Date(match.date).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'}) : '';
+  const hName  = match.homeTeam || '';
+  const aName  = match.awayTeam || '';
+  const hFlag  = getFlag(hName) || '';
+  const aFlag  = getFlag(aName) || '';
+  const hOwner = getOwner(hName);
+  const aOwner = getOwner(aName);
+  const hScore = (isDone || isLive) ? (match.homeScore ?? '') : '';
+  const aScore = (isDone || isLive) ? (match.awayScore ?? '') : '';
+  const hWin   = isDone && parseInt(hScore) > parseInt(aScore);
+  const aWin   = isDone && parseInt(aScore) > parseInt(hScore);
+  const isTBD  = n => !n || /winner|group|place|loser|3rd|round of/i.test(n);
+  const dateStr = match.date
+    ? new Date(match.date).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'})
+    : '';
   const slotCls = isLive ? 'bs-live' : isDone ? 'bs-done' : '';
+
   const teamRow = (flag, name, owner, score, win, lose) => `
     <div class="bs-team ${win?'bs-win':''} ${lose?'bs-lose':''}">
-      <span class="bs-flag">${isTBD(name)?'':flag}</span>
+      <span class="bs-flag">${isTBD(name) ? '' : flag}</span>
       <span class="bs-lbl">${isTBD(name) ? '?' : (owner || flag || '?')}</span>
-      ${score!=='' ? `<span class="bs-score ${win?'bs-score-win':''}">${score}</span>` : ''}
+      ${score !== '' ? `<span class="bs-score ${win?'bs-score-win':''}">${score}</span>` : ''}
     </div>`;
+
   return `<div class="bs ${slotCls}">
     ${isLive
       ? `<div class="bs-live-bar"><span class="bs-live-dot"></span>LIVE</div>`
       : dateStr ? `<div class="bs-date">${dateStr}</div>` : ''}
-    ${teamRow(hFlag,hName,hOwner,hScore,hWin,aWin&&isDone)}
+    ${teamRow(hFlag, hName, hOwner, hScore, hWin, aWin && isDone)}
     <div class="bs-divider"></div>
-    ${teamRow(aFlag,aName,aOwner,aScore,aWin,hWin&&isDone)}
+    ${teamRow(aFlag, aName, aOwner, aScore, aWin, hWin && isDone)}
   </div>`;
-}
-
-// Build a connector column between two rounds.
-// side: 'l' (left half, bars on right) or 'r' (right half, bars on left)
-// cells: array of { h } where h = height in px for this connector cell
-function makeConnCol(side, cells) {
-  const inner = cells.map(({h}) => `
-    <div class="bconn-cell bconn-${side}" style="height:${h}px">
-      <div class="bca-top"></div>
-      <div class="bca-h"></div>
-      <div class="bca-bot"></div>
-    </div>`).join('');
-  return `<div class="bconn">${inner}</div>`;
 }
 
 function renderBracket() {
   const container = document.getElementById('bracketWrap');
   const byId = {};
-  (matchesData||[]).forEach(m => { if (m.id) byId[String(m.id)] = m; });
+  (matchesData || []).forEach(m => { if (m.id) byId[String(m.id)] = m; });
   const M = id => byId[String(id)] || null;
 
-  // ── matches ──────────────────────────────────────────────────────────────
-  // LEFT half (feeds SF-1)
-  //   QF-1 ← R16-1 ← R32-1 + R32-3
-  //           R16-2 ← R32-2 + R32-5
-  //   QF-2 ← R16-5 ← R32-11 + R32-12
-  //           R16-6 ← R32-9  + R32-10
-  const r32 = {
-    L1: M('760486'), L2: M('760490'),   // → R16-1
-    L3: M('760487'), L4: M('760492'),   // → R16-2
-    L5: M('760497'), L6: M('760496'),   // → R16-5
-    L7: M('760493'), L8: M('760495'),   // → R16-6
-    R1: M('760489'), R2: M('760491'),   // → R16-3
-    R3: M('760488'), R4: M('760494'),   // → R16-4
-    R5: M('760499'), R6: M('760501'),   // → R16-7
-    R7: M('760498'), R8: M('760500'),   // → R16-8
-  };
-  const r16 = {
-    L1: M('760502'), L2: M('760503'),   // → QF-1
-    L3: M('760506'), L4: M('760507'),   // → QF-2
-    R1: M('760504'), R2: M('760505'),   // → QF-3
-    R3: M('760509'), R4: M('760508'),   // → QF-4
-  };
-  const qf = {
-    L1: M('760510'), L2: M('760511'),   // → SF-1
-    R1: M('760512'), R2: M('760513'),   // → SF-2
-  };
-  const sf1   = M('760514');
-  const sf2   = M('760515');
-  const final = M('760517');
-  const third = M('760516');
+  // ── Matches keyed by verified ESPN IDs ─────────────────────────────────
+  // LEFT half (top-to-bottom visual order within each section)
+  // Section 1 → QF-1 → SF-1
+  const L1  = M('760486'); // R32-1: South Africa vs Canada
+  const L2  = M('760489'); // R32-3: Germany vs Paraguay
+  const L3  = M('760487'); // R32-2: Brazil vs Japan
+  const L4  = M('760490'); // R32-5: Ivory Coast vs Norway
+  // Section 2 → QF-2 → SF-1
+  const L5  = M('760497'); // R32-11: Spain vs Austria
+  const L6  = M('760496'); // R32-12: Portugal vs Croatia
+  const L7  = M('760493'); // R32-9: Belgium vs Senegal
+  const L8  = M('760494'); // R32-10: USA vs Bosnia
 
-  const liveCount = (matchesData||[]).filter(m=>m.isLive).length;
+  // RIGHT half (top-to-bottom)
+  // Section 3 → QF-3 → SF-2
+  const R1  = M('760488'); // R32-4: Netherlands vs Morocco
+  const R2  = M('760492'); // R32-6: France vs Sweden
+  const R3  = M('760491'); // R32-7: Mexico vs Ecuador
+  const R4  = M('760495'); // R32-8: England vs Congo DR
+  // Section 4 → QF-4 → SF-2
+  const R5  = M('760499'); // R32-14: Australia vs Egypt
+  const R6  = M('760501'); // R32-16: Colombia vs Ghana
+  const R7  = M('760498'); // R32-13: Switzerland vs Algeria
+  const R8  = M('760500'); // R32-15: Argentina vs Cape Verde
 
-  // ── fixed sizing (must match --sh and --sg in CSS) ───────────────────────
-  const SH = 62;  // slot height  (--sh)
-  const SG = 8;   // slot gap     (--sg)
-  const HDR = 24; // header height
+  // R16
+  const RL1 = M('760502'); // R16-1: R32-1W vs R32-3W  (L1W vs L2W)
+  const RL2 = M('760503'); // R16-2: R32-2W vs R32-5W  (L3W vs L4W)
+  const RL3 = M('760506'); // R16-5: R32-11W vs R32-12W (L5W vs L6W)
+  const RL4 = M('760507'); // R16-6: R32-9W vs R32-10W  (L7W vs L8W)
+  const RR1 = M('760504'); // R16-3: R32-4W vs R32-6W  (R1W vs R2W)
+  const RR2 = M('760505'); // R16-4: R32-7W vs R32-8W  (R3W vs R4W)
+  const RR3 = M('760509'); // R16-7: R32-14W vs R32-16W (R5W vs R6W)
+  const RR4 = M('760508'); // R16-8: R32-13W vs R32-15W (R7W vs R8W)
 
-  // Connector cell height for each transition:
-  // R32 → R16 : each pair of R32 slots (2×SH + 1×SG inner gap) + their outer gap
-  //   pair height = SH + SG + SH = 134  (the two slots + gap between them)
-  //   between pairs there's a "group gap" = SG (between pair 1 bottom and pair 2 top)
-  //   wait — actually groups of 2 share a SG, and groups are separated by SG
-  //   R32 layout: [L1][SG][L2][SG][L3][SG][L4][SG][L5][SG][L6][SG][L7][SG][L8]
-  //   R16 layout: [sp][L1][SG][L2][SG][L3][SG][L4][sp]  where sp = (SH+SG)/2
+  // QF
+  const QL1 = M('760510'); // QF-1: RL1W vs RL2W
+  const QL2 = M('760511'); // QF-2: RL3W vs RL4W
+  const QR1 = M('760512'); // QF-3: RR1W vs RR2W
+  const QR2 = M('760513'); // QF-4: RR3W vs RR4W
+
+  // SF + Final
+  const SF1   = M('760514'); // QF-1W vs QF-2W
+  const SF2   = M('760515'); // QF-3W vs QF-4W
+  const FINAL = M('760517');
+  const THIRD = M('760516');
+
+  const liveCount = (matchesData || []).filter(m => m.isLive).length;
+
+  // ── Fixed sizing — must match CSS :root --sh and --sg ───────────────────
+  const SH  = 62;  // slot height px  (CSS --sh)
+  const SG  =  8;  // gap between slots in same column
+  const HDR = 24;  // column header height
+
+  // Derived connector cell heights (the vertical span of a bracket connector):
+  // Each connector cell covers exactly 2 slots + the gap between them:
+  //   pair_h = SH + SG + SH = 132
+  // Between pairs within a column there's another SG gap.
+
+  const PAIR  = SH + SG + SH;          // 132  (R32 pair → 1 R16 slot)
+  const QUAD  = PAIR + SG + PAIR;      // 272  (2 R16 pairs → 1 QF slot)
+  const OCT   = QUAD + SG + QUAD;      // 552  (2 QF pairs → 1 SF slot)
+
+  // Vertical padding to centre a slot inside its "zone":
+  //   pad = (zone_height - SH) / 2
+  const PAD16 = (PAIR - SH) / 2;       //  35  pad above/below each R16 slot
+  const PADQF = (QUAD - SH) / 2;       // 105  pad above/below each QF slot
+  const PADSF = (OCT  - SH) / 2;       // 245  pad above/below each SF slot
+
+  // ── Helper: spacer div ──────────────────────────────────────────────────
+  const sp = h => `<div style="height:${h}px;flex-shrink:0"></div>`;
+
+  // ── Column builders ─────────────────────────────────────────────────────
+  // R32: 8 slots with SG gap between every pair
+  const colR32 = (slots) =>
+    slots.map((s, i) =>
+      makeBSlot(s) + (i < slots.length - 1 ? sp(SG) : '')
+    ).join('');
+
+  // R16: 4 slots, each centred inside a PAIR-height zone
+  // Layout: [PAD16][slot][PAD16][SG] × 4  (no trailing SG)
+  const colR16 = (slots) =>
+    slots.map((s, i) =>
+      sp(PAD16) + makeBSlot(s) + sp(PAD16) + (i < slots.length - 1 ? sp(SG) : '')
+    ).join('');
+
+  // QF: 2 slots, each centred inside a QUAD-height zone
+  const colQF = (slots) =>
+    slots.map((s, i) =>
+      sp(PADQF) + makeBSlot(s) + sp(PADQF) + (i < slots.length - 1 ? sp(SG) : '')
+    ).join('');
+
+  // SF: 1 slot centred inside OCT-height zone
+  const colSF = (slot) => sp(PADSF) + makeBSlot(slot) + sp(PADSF);
+
+  // ── Connector column builder ────────────────────────────────────────────
+  // side: 'l' or 'r'  (left-half or right-half connectors)
+  // cells: array of heights for each bracket cell
+  // between cells: SG spacer (same as between columns)
+  const connCol = (side, cells) => {
+    const inner = cells.map((h, i) =>
+      `<div class="bconn-cell bconn-${side}" style="height:${h}px">
+        <div class="bca-top"></div>
+        <div class="bca-h"></div>
+        <div class="bca-bot"></div>
+      </div>` + (i < cells.length - 1 ? sp(SG) : '')
+    ).join('');
+    return `<div class="bconn" style="padding-top:${HDR}px">${inner}</div>`;
+  };
+
+  // Connector heights:
+  // R32 → R16: each cell spans 1 PAIR (2 R32 slots → 1 R16 slot)
+  //   But the R16 column has PAD16 above/below the slot, so the connector
+  //   must account for that. Actually we just need the connector to span
+  //   from centre of top R32 slot to centre of bottom R32 slot = PAIR.
+  //   The PAD16 in the R16 col naturally aligns the R16 slot midpoint
+  //   to the midpoint of the connector. ✓
   //
-  // For the connector between R32 and R16:
-  //   Each R16 slot is the result of 2 R32 slots.
-  //   The connector cell height = SH + SG + SH = 2*SH + SG
-  //   (spans from midpoint of top R32 slot to midpoint of bottom R32 slot)
-  //   That equals 2*62 + 8 = 132px
+  // R16 → QF: each cell spans 1 QUAD (2 R16 slots + gaps = PAIR+SG+PAIR)
+  //   With PAD16 wrappers: total zone = PAD16+SH+PAD16+SG+PAD16+SH+PAD16
+  //                                   = 2*(PAD16+SH+PAD16)+SG = 2*PAIR+SG = QUAD ✓
+  //
+  // QF → SF: each cell spans 1 OCT
 
-  const C_R32_R16 = 2*SH + SG;       // 132px — height of one connector cell (2 R32 → 1 R16)
-  const C_R16_QF  = 2*SH + (2*SG + C_R32_R16); // spans 2 R16 slots + everything between them
-  // 2 R16 slots are separated by: the inter-group gap between the pairs
-  // R16 layout (4 slots): each slot vertically centred in its "zone" of 2 R32 slots
-  // distance between adjacent R16 slot centres = C_R32_R16 + SG (the gap between groups of 2)
-  // So R16→QF connector height = SH + (C_R32_R16 + SG) + SH = 2*SH + C_R32_R16 + SG
-  const C_R16_QF_H = 2*SH + C_R32_R16 + SG;    // = 2*62 + 132 + 8 = 264px
+  // Between R32 connector cells: SG (matching slot gaps)
+  // But! The R16 col adds PAD16 top/bottom of each slot, and those pads
+  // are inside the column. The connector cells must include those pads.
+  // Each connector cell height = PAIR (includes the pads implicitly
+  // because R16 centres the slot within PAIR). ✓
 
-  // QF→SF: spans 2 QF slots
-  // QF slots are each centred in a zone of 2 R16 slots
-  // distance between QF slot centres = C_R16_QF_H + SG
-  const C_QF_SF_H = 2*SH + C_R16_QF_H + SG;    // = 2*62 + 264 + 8 = 396px
+  const connR32R16L = connCol('l', [PAIR, PAIR, PAIR, PAIR]);
+  const connR16QFL  = connCol('l', [QUAD, QUAD]);
+  const connQFSFL   = connCol('l', [OCT]);
+  const connR32R16R = connCol('r', [PAIR, PAIR, PAIR, PAIR]);
+  const connR16QFR  = connCol('r', [QUAD, QUAD]);
+  const connQFSFR   = connCol('r', [OCT]);
 
-  // ── column builders ──────────────────────────────────────────────────────
-  // Build a round column: takes slots and gaps between them
-  // Layout is always: [slot][gap][slot][gap_large][slot][gap][slot]...
-  // For R32 (8 slots): alternating small gap (SG) between pairs, SG between pairs
-  // Actually all gaps are SG — 7 gaps between 8 slots
+  // ── Centre: SF→Final slim connectors + Final/3rd ────────────────────────
+  // The SF slots sit at vertical position PADSF from the top of the column.
+  // Their centre = PADSF + SH/2 = 245 + 31 = 276px from col top.
+  // Total column height = OCT = 552px. Centre = 276px. ✓
+  // So a simple flex-centred horizontal line connects SF to Final.
 
-  const colR32 = (slots) => {
-    let s = '';
-    slots.forEach((sl, i) => {
-      s += makeBSlot(sl);
-      if (i < slots.length - 1) s += `<div class="bs-gap" style="height:${SG}px"></div>`;
-    });
-    return s;
-  };
-
-  // For R16 (4 slots): each slot needs to be vertically centred within its 2-slot zone
-  // Zone height = C_R32_R16 = 132px, slot height = 62px → padding each side = (132-62)/2 = 35px
-  const pad16 = (C_R32_R16 - SH) / 2;  // 35px
-  const colR16 = (slots) => {
-    let s = '';
-    slots.forEach((sl, i) => {
-      s += `<div class="bs-gap" style="height:${pad16}px"></div>`;
-      s += makeBSlot(sl);
-      s += `<div class="bs-gap" style="height:${pad16}px"></div>`;
-      // gap between R16 slot groups = SG (same as R32 inter-slot gap)
-      if (i < slots.length - 1) s += `<div class="bs-gap" style="height:${SG}px"></div>`;
-    });
-    return s;
-  };
-
-  // For QF (2 slots): centred within their 2-slot R16 zone
-  const pad_qf = (C_R16_QF_H - SH) / 2;
-  const colQF = (slots) => {
-    let s = '';
-    slots.forEach((sl, i) => {
-      s += `<div class="bs-gap" style="height:${pad_qf}px"></div>`;
-      s += makeBSlot(sl);
-      s += `<div class="bs-gap" style="height:${pad_qf}px"></div>`;
-      if (i < slots.length - 1) s += `<div class="bs-gap" style="height:${SG}px"></div>`;
-    });
-    return s;
-  };
-
-  // For SF (1 slot): centred in its 2-QF zone
-  const pad_sf = (C_QF_SF_H - SH) / 2;
-  const colSF = (slot) =>
-    `<div class="bs-gap" style="height:${pad_sf}px"></div>` +
-    makeBSlot(slot) +
-    `<div class="bs-gap" style="height:${pad_sf}px"></div>`;
-
-  // ── connector cell heights ────────────────────────────────────────────────
-  // R32→R16: 4 connector cells, each height = C_R32_R16, separated by SG
-  const connR32R16_cells = [
-    {h: C_R32_R16}, {h: C_R32_R16}, {h: C_R32_R16}, {h: C_R32_R16}
-  ];
-  // But the connector column must also align with the padding that R16 adds.
-  // The first connector cell starts at the top of the first R32 slot.
-  // We need to pad-top the connector col by 0 (no header offset needed since
-  // we set padding-top: HDR on .bconn via CSS).
-  // Between connector cells: SG gap
-  const connCellsR32R16 = connR32R16_cells
-    .map(c => `<div class="bconn-cell bconn-SIDE" style="height:${c.h}px">
-        <div class="bca-top"></div><div class="bca-h"></div><div class="bca-bot"></div>
-      </div><div style="height:${SG}px;flex-shrink:0"></div>`)
-    .join('');
-
-  // R16→QF: 2 connector cells, height = C_R16_QF_H
-  // starts after pad16 offset (since R16 col starts with a pad)
-  const connR16QF_cells_h = C_R16_QF_H;
-  const connCellsR16QF = [0,1].map(_ =>
-    `<div class="bconn-cell bconn-SIDE" style="height:${connR16QF_cells_h}px">
-        <div class="bca-top"></div><div class="bca-h"></div><div class="bca-bot"></div>
-      </div><div style="height:${SG}px;flex-shrink:0"></div>`
-  ).join('');
-
-  // QF→SF: 1 connector cell, height = C_QF_SF_H
-  const connQFSF = `<div class="bconn-cell bconn-SIDE" style="height:${C_QF_SF_H}px">
-      <div class="bca-top"></div><div class="bca-h"></div><div class="bca-bot"></div>
+  const sfConnW = 14;
+  const sfConn = () =>
+    `<div style="width:${sfConnW}px;flex-shrink:0;padding-top:${HDR}px;display:flex;flex-direction:column;">
+      <div style="flex:1"></div>
+      <div style="height:2px;background:rgba(245,166,35,0.45)"></div>
+      <div style="flex:1"></div>
     </div>`;
 
-  // Build connector columns (left/right sides)
-  const makeConn = (side, cells_html) =>
-    `<div class="bconn" style="padding-top:${HDR}px">${cells_html.replace(/bconn-SIDE/g, `bconn-${side}`)}</div>`;
+  const totalH = OCT; // 552px — used to size centre col
 
-  // ── total bracket height (for centre column alignment) ────────────────────
-  // 8 R32 slots + 7 SG gaps = 8*62 + 7*8 = 496 + 56 = 552px
-  const totalH = 8*SH + 7*SG;  // 552
-
-  // ── centre column: SF-1 → Final ← SF-2 ───────────────────────────────────
-  // SF slots are vertically at:
-  //   SF-1 top = pad_sf = (C_QF_SF_H - SH)/2 above centre of left side
-  // Both SF cols have same total height = totalH
-  // SF-1 centre y = pad_sf + SH/2
-  // We want the final slot centred between SF-1 and SF-2 centres, which is totalH/2
   const centreCol = `
-    <div style="display:flex;flex-direction:column;flex-shrink:0;width:120px;padding-top:${HDR}px;">
-      <!-- top spacer to push Final to vertical centre -->
-      <div style="flex:1;min-height:0"></div>
-      <div style="text-align:center;margin-bottom:4px;">
-        <div style="font-size:0.55rem;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;">🏆 Final</div>
-      </div>
-      ${makeBSlot(final)}
+    <div style="width:118px;flex-shrink:0;padding-top:${HDR}px;display:flex;flex-direction:column;">
+      <div style="flex:1"></div>
+      <div style="margin-bottom:4px;text-align:center;font-size:0.54rem;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;">🏆 Final</div>
+      ${makeBSlot(FINAL)}
       <div style="height:10px;flex-shrink:0"></div>
-      <div style="text-align:center;margin-bottom:4px;">
-        <div style="font-size:0.52rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">🥉 3rd Place</div>
-      </div>
-      ${makeBSlot(third)}
-      <div style="flex:1;min-height:0"></div>
+      <div style="margin-bottom:4px;text-align:center;font-size:0.52rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.09em;">🥉 3rd Place</div>
+      ${makeBSlot(THIRD)}
+      <div style="flex:1"></div>
     </div>`;
 
-  // SF→Final connectors (simple horizontal lines, one from each side)
-  const sfFinalConn = (side) => `
-    <div class="bconn" style="padding-top:${HDR}px;width:12px;">
-      <div style="flex:1;min-height:0"></div>
-      <div style="height:2px;background:var(--cc);flex-shrink:0"></div>
-      <div style="flex:1;min-height:0"></div>
-    </div>`;
-
-  // ── assemble ──────────────────────────────────────────────────────────────
+  // ── Assemble ────────────────────────────────────────────────────────────
   const html = `
     <div style="text-align:center;margin-bottom:10px;">
-      <div style="font-size:0.95rem;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold)">⚽ 2026 FIFA World Cup Bracket</div>
+      <div style="font-size:0.95rem;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold)">⚽ 2026 FIFA World Cup — Knockout Bracket</div>
       <div style="font-size:0.6rem;color:var(--muted);margin-top:3px;">
-        ${liveCount > 0 ? `<span style="color:var(--gold);font-weight:700"><span class="bs-live-dot" style="display:inline-block;margin-right:3px"></span>${liveCount} LIVE</span> · ` : ''}
-        Flag = country &nbsp;·&nbsp; Name = pool owner &nbsp;·&nbsp; Auto-updates hourly
+        ${liveCount > 0
+          ? `<span style="color:var(--gold);font-weight:700"><span class="bs-live-dot" style="display:inline-block;margin-right:3px;vertical-align:middle"></span>${liveCount} LIVE</span> · `
+          : ''}
+        Flag = country &nbsp;·&nbsp; Name = pool owner &nbsp;·&nbsp; Updates hourly
       </div>
     </div>
 
     <div style="overflow-x:auto;padding-bottom:8px;">
-    <div style="display:flex;align-items:stretch;gap:0;min-width:1000px;">
+    <div style="display:flex;align-items:flex-start;gap:0;min-width:1060px;">
 
-      <!-- R32 LEFT -->
-      <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([r32.L1,r32.L2,r32.L3,r32.L4,r32.L5,r32.L6,r32.L7,r32.L8])}</div>
+      <!-- ── LEFT HALF ─────────────────────────────── -->
+      <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([L1,L2,L3,L4,L5,L6,L7,L8])}</div>
+      ${connR32R16L}
+      <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([RL1,RL2,RL3,RL4])}</div>
+      ${connR16QFL}
+      <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([QL1,QL2])}</div>
+      ${connQFSFL}
+      <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(SF1)}</div>
 
-      ${makeConn('l', connCellsR32R16)}
-
-      <!-- R16 LEFT -->
-      <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([r16.L1,r16.L2,r16.L3,r16.L4])}</div>
-
-      ${makeConn('l', connCellsR16QF)}
-
-      <!-- QF LEFT -->
-      <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([qf.L1,qf.L2])}</div>
-
-      ${makeConn('l', connQFSF)}
-
-      <!-- SF LEFT -->
-      <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(sf1)}</div>
-
-      <!-- SF→FINAL left stub + Final col + SF→FINAL right stub -->
-      ${sfFinalConn('l')}
+      <!-- ── CENTRE ────────────────────────────────── -->
+      ${sfConn()}
       ${centreCol}
-      ${sfFinalConn('r')}
+      ${sfConn()}
 
-      <!-- SF RIGHT -->
-      <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(sf2)}</div>
-
-      ${makeConn('r', connQFSF)}
-
-      <!-- QF RIGHT -->
-      <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([qf.R1,qf.R2])}</div>
-
-      ${makeConn('r', connCellsR16QF)}
-
-      <!-- R16 RIGHT -->
-      <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([r16.R1,r16.R2,r16.R3,r16.R4])}</div>
-
-      ${makeConn('r', connCellsR32R16)}
-
-      <!-- R32 RIGHT -->
-      <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([r32.R1,r32.R2,r32.R3,r32.R4,r32.R5,r32.R6,r32.R7,r32.R8])}</div>
+      <!-- ── RIGHT HALF ────────────────────────────── -->
+      <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(SF2)}</div>
+      ${connQFSFR}
+      <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([QR1,QR2])}</div>
+      ${connR16QFR}
+      <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([RR1,RR2,RR3,RR4])}</div>
+      ${connR32R16R}
+      <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([R1,R2,R3,R4,R5,R6,R7,R8])}</div>
 
     </div>
     </div>
 
     <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:0.62rem;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
-      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(245,166,35,0.7);background:rgba(245,166,35,0.1);display:inline-block"></span>Live now</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(245,166,35,0.7);background:rgba(245,166,35,0.1);display:inline-block"></span>Live</span>
       <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid rgba(0,208,132,0.5);background:rgba(0,208,132,0.08);display:inline-block"></span>Completed</span>
       <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;border:1px solid var(--border);opacity:0.4;display:inline-block"></span>TBD</span>
-      <span><span style="color:var(--green);font-weight:700">Green score</span> = match winner</span>
-      <span>Name shown = office pool owner</span>
+      <span><span style="color:var(--green);font-weight:700">Green</span> = winner &nbsp;·&nbsp; Name = pool owner</span>
     </div>`;
 
   container.innerHTML = html;
+}
+
 }
 
 
