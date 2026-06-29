@@ -1641,12 +1641,16 @@ function parseMatches(events) {
       };
     }
 
+    // Extract bracketLocation — ESPN's canonical bracket slot number (1-16 for R32, etc.)
+    const bracketLocation = competition?.bracketLocation || ev.bracketLocation || null;
+
     return {
       id: ev.id,
       date: ev.date,
       name: ev.name || '',
       group: ev.season?.slug || competition?.series?.summary || ev.notes?.[0]?.headline || '',
       roundSlug,
+      bracketLocation,
       venue,
       homeTeam, awayTeam,
       homeScore: home?.score || (isFinal || isLive ? '0' : '-'),
@@ -2469,119 +2473,103 @@ function makeBSlot(match) {
 function renderBracket() {
   const container = document.getElementById('bracketWrap');
 
-  // ── Fully dynamic: derive bracket from matchesData sorted by date ───────
+  // ── Use ESPN bracketLocation to sort games into correct bracket positions ─
+  // bracketLocation is ESPN's canonical bracket slot number (1-16 for R32, etc.)
+  // Left half = slots 1-8, Right half = slots 9-16
+
   const bySlug = {};
   (matchesData || []).forEach(m => {
     const s = m.roundSlug || 'group-stage';
     if (!bySlug[s]) bySlug[s] = [];
     bySlug[s].push(m);
   });
-  const sortByDate = arr => (arr || []).slice().sort((a,b) => new Date(a.date) - new Date(b.date));
 
-  const r32 = sortByDate(bySlug['round-of-32']);   // 16 games, sorted by date
-  const r16 = sortByDate(bySlug['round-of-16']);   // 8 games
-  const qf  = sortByDate(bySlug['quarterfinals']); // 4 games
-  const sf  = sortByDate(bySlug['semifinals']);     // 2 games
+  // Sort by ESPN bracketLocation if available, else fall back to date
+  const byBracketLoc = arr => (arr || []).slice().sort((a, b) => {
+    const aLoc = a.bracketLocation || 999;
+    const bLoc = b.bracketLocation || 999;
+    if (aLoc !== bLoc) return aLoc - bLoc;
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  const r32 = byBracketLoc(bySlug['round-of-32']);   // 16 games, slots 1-16
+  const r16 = byBracketLoc(bySlug['round-of-16']);   // 8 games, slots 1-8
+  const qf  = byBracketLoc(bySlug['quarterfinals']); // 4 games
+  const sf  = byBracketLoc(bySlug['semifinals']);     // 2 games
   const fin = (bySlug['final'] || [])[0] || null;
   const trd = (bySlug['3rd-place-match'] || [])[0] || null;
 
   const G = (arr, i) => (arr && arr[i]) ? arr[i] : null;
 
-  // R32 by date (indices 0-15):
-  // idx: 0=Can/SA  1=Jap/Bra  2=Ger/Par  3=Mar/Ned  4=Nor/CIV  5=Swe/Fra
-  //      6=Ecu/Mex  7=COD/Eng  8=Sen/Bel  9=Bos/USA  10=Aut/Esp  11=Cro/Por
-  //      12=Alg/Sui  13=Egy/Aus  14=CPV/Arg  15=Gha/Col
+  // ESPN bracketLocation order (verified from bracket page):
+  // R32: slot 1=Ger/Par, 2=Fra/Swe, 3=Can/SA, 4=Ned/Mar, 5=Por/Cro, 6=Esp/Aut
+  //      7=USA/Bos, 8=Bel/Sen, 9=Bra/Jap, 10=CIV/Nor, 11=Mex/Ecu, 12=Eng/COD
+  //      13=Arg/CPV, 14=Aus/Egy, 15=Sui/Alg, 16=Col/Gha
   //
-  // Verified R32→R16 pairing (from ESPN event names):
-  // LEFT  R16[0]: idx0 + idx2  (Can/SA + Ger/Par)       → R16-1 (760502)
-  // LEFT  R16[1]: idx3 + idx4  (Mar/Ned + Nor/CIV)       → R16-2 (760503)
-  // RIGHT R16[0]: idx1 + idx5  (Jap/Bra + Swe/Fra)       → R16-3 (760504) ← Brazil here!
-  // RIGHT R16[1]: idx6 + idx7  (Ecu/Mex + COD/Eng)       → R16-4 (760505)
-  // LEFT  R16[2]: idx8 + idx9  (Sen/Bel + Bos/USA)        → R16-5 (760507)
-  // LEFT  R16[3]: idx10 + idx11 (Aut/Esp + Cro/Por)       → R16-6 (760506)
-  // RIGHT R16[2]: idx13 + idx15 (Egy/Aus + Gha/Col)       → R16-7 (760509)
-  // RIGHT R16[3]: idx12 + idx14 (Alg/Sui + CPV/Arg)       → R16-8 (760508)
+  // LEFT HALF (slots 1-8, top→bottom in visual):
+  // Pairs: [1,2]→R16-1, [3,4]→R16-2, [5,6]→R16-3, [7,8]→R16-4
+  // RIGHT HALF (slots 9-16, top→bottom):
+  // Pairs: [9,10]→R16-5, [11,12]→R16-6, [13,14]→R16-7, [15,16]→R16-8
 
-  // LEFT half R32 (top→bottom in visual column, paired):
-  const L1 = G(r32,0);  const L2 = G(r32,2);   // Pair 1 → RL1
-  const L3 = G(r32,3);  const L4 = G(r32,4);   // Pair 2 → RL2
-  const L5 = G(r32,8);  const L6 = G(r32,9);   // Pair 3 → RL3
-  const L7 = G(r32,10); const L8 = G(r32,11);  // Pair 4 → RL4
+  // r32 is now sorted by bracketLocation: index 0=slot1, 1=slot2, ... 15=slot16
+  const L1 = G(r32,0);  const L2 = G(r32,1);   // Ger/Par + Fra/Swe  → RL1
+  const L3 = G(r32,2);  const L4 = G(r32,3);   // Can/SA  + Ned/Mar  → RL2 ← Canada + NED/MAR!
+  const L5 = G(r32,4);  const L6 = G(r32,5);   // Por/Cro + Esp/Aut  → RL3
+  const L7 = G(r32,6);  const L8 = G(r32,7);   // USA/Bos + Bel/Sen  → RL4
 
-  // RIGHT half R32 (top→bottom):
-  const R1 = G(r32,1);  const R2 = G(r32,5);   // Pair 5 → RR1 (Brazil + Swe/Fra)
-  const R3 = G(r32,6);  const R4 = G(r32,7);   // Pair 6 → RR2
-  const R5 = G(r32,13); const R6 = G(r32,15);  // Pair 7 → RR3
-  const R7 = G(r32,12); const R8 = G(r32,14);  // Pair 8 → RR4
+  const R1 = G(r32,8);  const R2 = G(r32,9);   // Bra/Jap + CIV/Nor  → RR1
+  const R3 = G(r32,10); const R4 = G(r32,11);  // Mex/Ecu + Eng/COD  → RR2
+  const R5 = G(r32,12); const R6 = G(r32,13);  // Arg/CPV + Aus/Egy  → RR3
+  const R7 = G(r32,14); const R8 = G(r32,15);  // Sui/Alg + Col/Gha  → RR4
 
-  // R16 sorted by date: [0]=760502 [1]=760503 [2]=760504 [3]=760505
-  //                     [4]=760506 [5]=760507 [6]=760509 [7]=760508
-  // LEFT R16 (top→bottom): R16[0], R16[1], R16[5], R16[4]
-  // RIGHT R16 (top→bottom): R16[2], R16[3], R16[6], R16[7]
-  const RL1 = G(r16,0); const RL2 = G(r16,1);
-  const RL3 = G(r16,5); const RL4 = G(r16,4);
-  const RR1 = G(r16,2); const RR2 = G(r16,3);
-  const RR3 = G(r16,6); const RR4 = G(r16,7);
+  // R16 bracketLocation: 1=R16-1(R32-1+2), 2=R16-2(Can+NED/MAR), 3=R16-3, 4=R16-4 (LEFT)
+  //                      5=R16-5(Bra), 6=R16-6, 7=R16-7, 8=R16-8 (RIGHT)
+  const RL1 = G(r16,0); const RL2 = G(r16,1);  // LEFT R16 top pair
+  const RL3 = G(r16,2); const RL4 = G(r16,3);  // LEFT R16 bottom pair
+  const RR1 = G(r16,4); const RR2 = G(r16,5);  // RIGHT R16 top pair
+  const RR3 = G(r16,6); const RR4 = G(r16,7);  // RIGHT R16 bottom pair
 
-  // QF sorted by date: [0]=760510 [1]=760511 [2]=760512 [3]=760513
-  // LEFT QF: [0],[1]  RIGHT QF: [2],[3]
+  // QF: bracketLocation 1,2 = left; 3,4 = right
   const QL1 = G(qf,0); const QL2 = G(qf,1);
   const QR1 = G(qf,2); const QR2 = G(qf,3);
 
-  const SF1   = G(sf,0);
-  const SF2   = G(sf,1);
-  const FINAL = fin;
-  const THIRD = trd;
+  const SF1 = G(sf,0); const SF2 = G(sf,1);
+  const FINAL = fin; const THIRD = trd;
 
   const liveCount = (matchesData || []).filter(m => m.isLive).length;
 
-  // ── Fixed sizing ────────────────────────────────────────────────────────
-  const SH  = 62;
-  const SG  = 8;
-  const HDR = 24;
-
-  const PAIR  = SH + SG + SH;
-  const QUAD  = PAIR + SG + PAIR;
-  const OCT   = QUAD + SG + QUAD;
-
+  const SH = 62, SG = 8, HDR = 24;
+  const PAIR = SH + SG + SH;
+  const QUAD = PAIR + SG + PAIR;
+  const OCT  = QUAD + SG + QUAD;
   const PAD16 = (PAIR - SH) / 2;
   const PADQF = (QUAD - SH) / 2;
   const PADSF = (OCT  - SH) / 2;
-
   const sp = h => `<div style="height:${h}px;flex-shrink:0"></div>`;
 
   const colR32 = slots =>
-    slots.map((s, i) => makeBSlot(s) + (i < slots.length - 1 ? sp(SG) : '')).join('');
-
+    slots.map((s,i) => makeBSlot(s) + (i < slots.length-1 ? sp(SG) : '')).join('');
   const colR16 = slots =>
-    slots.map((s, i) =>
-      sp(PAD16) + makeBSlot(s) + sp(PAD16) + (i < slots.length - 1 ? sp(SG) : '')
-    ).join('');
-
+    slots.map((s,i) => sp(PAD16)+makeBSlot(s)+sp(PAD16)+(i<slots.length-1?sp(SG):'')).join('');
   const colQF = slots =>
-    slots.map((s, i) =>
-      sp(PADQF) + makeBSlot(s) + sp(PADQF) + (i < slots.length - 1 ? sp(SG) : '')
-    ).join('');
-
-  const colSF = slot => sp(PADSF) + makeBSlot(slot) + sp(PADSF);
+    slots.map((s,i) => sp(PADQF)+makeBSlot(s)+sp(PADQF)+(i<slots.length-1?sp(SG):'')).join('');
+  const colSF = slot => sp(PADSF)+makeBSlot(slot)+sp(PADSF);
 
   const connCol = (side, cells) => {
-    const inner = cells.map((h, i) =>
+    const inner = cells.map((h,i) =>
       `<div class="bconn-cell bconn-${side}" style="height:${h}px">
-        <div class="bca-top"></div>
-        <div class="bca-h"></div>
-        <div class="bca-bot"></div>
-      </div>` + (i < cells.length - 1 ? sp(SG) : '')
+        <div class="bca-top"></div><div class="bca-h"></div><div class="bca-bot"></div>
+      </div>`+(i<cells.length-1?sp(SG):'')
     ).join('');
     return `<div class="bconn" style="padding-top:${HDR}px">${inner}</div>`;
   };
 
-  const connR32R16L = connCol('l', [PAIR, PAIR, PAIR, PAIR]);
-  const connR16QFL  = connCol('l', [QUAD, QUAD]);
-  const connQFSFL   = connCol('l', [OCT]);
-  const connR32R16R = connCol('r', [PAIR, PAIR, PAIR, PAIR]);
-  const connR16QFR  = connCol('r', [QUAD, QUAD]);
-  const connQFSFR   = connCol('r', [OCT]);
+  const connR32R16L = connCol('l',[PAIR,PAIR,PAIR,PAIR]);
+  const connR16QFL  = connCol('l',[QUAD,QUAD]);
+  const connQFSFL   = connCol('l',[OCT]);
+  const connR32R16R = connCol('r',[PAIR,PAIR,PAIR,PAIR]);
+  const connR16QFR  = connCol('r',[QUAD,QUAD]);
+  const connQFSFR   = connCol('r',[OCT]);
 
   const sfConn = () =>
     `<div style="width:14px;flex-shrink:0;padding-top:${HDR}px;display:flex;flex-direction:column;">
@@ -2605,13 +2593,12 @@ function renderBracket() {
     <div style="text-align:center;margin-bottom:10px;">
       <div style="font-size:0.95rem;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold)">⚽ 2026 FIFA World Cup — Knockout Bracket</div>
       <div style="font-size:0.6rem;color:var(--muted);margin-top:3px;">
-        ${liveCount > 0 ? `<span style="color:var(--gold);font-weight:700"><span class="bs-live-dot" style="display:inline-block;margin-right:3px;vertical-align:middle"></span>${liveCount} LIVE</span> · ` : ''}
+        ${liveCount>0?`<span style="color:var(--gold);font-weight:700"><span class="bs-live-dot" style="display:inline-block;margin-right:3px;vertical-align:middle"></span>${liveCount} LIVE</span> · `:''}
         Flag = country &nbsp;·&nbsp; Name = pool owner &nbsp;·&nbsp; Updates hourly
       </div>
     </div>
     <div style="overflow-x:auto;padding-bottom:8px;">
     <div style="display:flex;align-items:flex-start;gap:0;min-width:1060px;">
-      <!-- LEFT HALF -->
       <div class="bcol"><div class="bcol-hdr">Rd of 32</div>${colR32([L1,L2,L3,L4,L5,L6,L7,L8])}</div>
       ${connR32R16L}
       <div class="bcol"><div class="bcol-hdr">Rd of 16</div>${colR16([RL1,RL2,RL3,RL4])}</div>
@@ -2619,11 +2606,7 @@ function renderBracket() {
       <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([QL1,QL2])}</div>
       ${connQFSFL}
       <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(SF1)}</div>
-      <!-- CENTRE -->
-      ${sfConn()}
-      ${centreCol}
-      ${sfConn()}
-      <!-- RIGHT HALF -->
+      ${sfConn()}${centreCol}${sfConn()}
       <div class="bcol"><div class="bcol-hdr">Semis</div>${colSF(SF2)}</div>
       ${connQFSFR}
       <div class="bcol"><div class="bcol-hdr">Quarters</div>${colQF([QR1,QR2])}</div>
