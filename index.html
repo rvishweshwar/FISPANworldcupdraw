@@ -1409,17 +1409,24 @@ function getTeamStatus(team) {
   if (note.includes('eliminat')) return 'eliminated';
 
   // Check if this team played in a completed knockout match and lost
+  // Uses homeWinner/awayWinner flags (not scores) to handle penalties/AET correctly
+  // e.g. Netherlands 1-1 Morocco AET, Morocco wins 4-3 on pens → scores tied but winner flagged
   const teamNorm = normalizeTeamName(team.name || '');
   const koLoss = (matchesData || []).some(m => {
     if (!m.isFinal) return false;
     if (!m.roundSlug || m.roundSlug === 'group-stage') return false;
+    if (m.roundSlug === '3rd-place-match') return false;
     const hN = normalizeTeamName(m.homeTeam);
     const aN = normalizeTeamName(m.awayTeam);
     if (hN !== teamNorm && aN !== teamNorm) return false;
+    // Prefer ESPN winner flags (handles penalties/AET where scores are tied)
+    if (m.homeWinner !== undefined || m.awayWinner !== undefined) {
+      if (hN === teamNorm) return m.awayWinner === true;
+      return m.homeWinner === true;
+    }
+    // Fallback: score comparison (regular time wins)
     const hS = parseInt(m.homeScore) || 0;
     const aS = parseInt(m.awayScore) || 0;
-    // In 3rd place match a loss doesn't mean eliminated from prize
-    if (m.roundSlug === '3rd-place-match') return false;
     if (hN === teamNorm) return aS > hS;
     return hS > aS;
   });
@@ -1593,10 +1600,16 @@ function parseMatches(events) {
     const status = ev.status?.type?.name || '';
     const state = competition?.status?.type?.state || ev.status?.type?.state || '';
     const isLive = status === 'STATUS_IN_PROGRESS' || state === 'in';
-    const isFinal = status === 'STATUS_FINAL' || status === 'STATUS_FULL_TIME' || state === 'post';
+    const isFinal = status === 'STATUS_FINAL' || status === 'STATUS_FULL_TIME' ||
+                    status === 'STATUS_FINAL_PEN' || status === 'STATUS_FINAL_AET' ||
+                    state === 'post';
 
     const homeTeam = normalizeTeamName(home?.team?.displayName || '');
     const awayTeam = normalizeTeamName(away?.team?.displayName || '');
+    // Store winner flags from ESPN directly — needed for penalty/AET results
+    // where scores are tied but one team advanced (e.g. 1-1 AET, won 4-3 on pens)
+    const homeWinner = home?.winner === true || home?.advance === true;
+    const awayWinner = away?.winner === true || away?.advance === true;
 
     // Derive round slug from season slug or altGameNote
     const altNote = (competition?.altGameNote || '').toLowerCase();
@@ -1655,6 +1668,7 @@ function parseMatches(events) {
       homeTeam, awayTeam,
       homeScore: home?.score || (isFinal || isLive ? '0' : '-'),
       awayScore: away?.score || (isFinal || isLive ? '0' : '-'),
+      homeWinner, awayWinner,
       isLive, isFinal,
       statusText: ev.status?.type?.shortDetail || status,
       odds,
