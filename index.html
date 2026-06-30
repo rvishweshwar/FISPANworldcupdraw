@@ -2639,21 +2639,27 @@ function getNormalizedFuturesProbs() {
   const probs = {};
   let total = 0;
   PARTICIPANTS.forEach(p => {
-    const raw = getFuturesWinProb(p.team);
+    const t = teamData[p.team];
+    // Zero out eliminated teams — they have no tournament win probability
+    const elim = !t || getTeamStatus(t) === 'eliminated';
+    const raw = elim ? 0 : getFuturesWinProb(p.team);
     const prob = raw || 0.0001;
-    probs[p.team] = prob;
-    total += prob;
+    probs[p.team] = elim ? 0 : prob;
+    if (!elim) total += prob;
   });
-  // Normalize
-  Object.keys(probs).forEach(k => probs[k] = probs[k] / total);
+  // Normalize across only active teams
+  if (total > 0) Object.keys(probs).forEach(k => {
+    probs[k] = probs[k] / total;
+  });
   return probs;
 }
 
 // Max remaining bonus pts a team can still earn from here
 function maxRemainingBonus(team) {
   if (!team) return 0;
+  // Use full status check — catches KO-eliminated teams (e.g. Germany lost R32)
+  if (getTeamStatus(team) === 'eliminated') return 0;
   const note = (team.note || '').toLowerCase();
-  if (note.includes('eliminat')) return 0;
   const B = KNOCKOUT_BONUS;
   // Strict: "Best 8 advance" teams are NOT confirmed R32 yet — treat as group stage still
   const hasR32 = (note.includes('advance to round of 32') || (note.includes('round of 32') && !note.includes('best'))) && !note.includes('round of 16');
@@ -2706,8 +2712,9 @@ function expectedGroupPts(teamName) {
 // Expected knockout bonus using futures win probability to model survival through rounds
 function expectedKnockoutBonus(team, teamName) {
   if (!team) return 0;
+  // Use full status check — catches KO-eliminated teams (e.g. Germany/Netherlands lost R32)
+  if (getTeamStatus(team) === 'eliminated') return 0;
   const note = (team.note || '').toLowerCase();
-  if (note.includes('eliminat')) return 0;
 
   const B = KNOCKOUT_BONUS;
   // Strict: "Best 8 advance" teams are NOT confirmed R32 yet — treat as group stage
@@ -2782,12 +2789,15 @@ function renderPredict() {
   const entries = PARTICIPANTS.map(p => {
     const t = teamData[p.team];
     const current = calcPoolPoints(t);
-    const isElim  = !t || (t.note || '').toLowerCase().includes('eliminat');
+    // Use getTeamStatus for accurate elimination detection — catches KO losses
+    // (e.g. Germany/Netherlands lost in R32 but note still says "Advance to Round of 32")
+    const status = getTeamStatus(t);
+    const isElim = !t || status === 'eliminated';
 
     const expGroup    = isElim ? 0 : expectedGroupPts(p.team);
     const expKnockout = isElim ? 0 : expectedKnockoutBonus(t, p.team);
     const projTotal   = Math.round((current.pts + expGroup + expKnockout) * 10) / 10;
-    const maxTotal    = current.pts + maxRemainingBonus(t);
+    const maxTotal    = current.pts + (isElim ? 0 : maxRemainingBonus(t));
 
     // Tournament win probability from futures odds (normalized across all 48 participants)
     const tournWinProb = isElim ? 0 : (futuresProbs[p.team] || 0);
@@ -2803,7 +2813,7 @@ function renderPredict() {
       tournWinProb,
       futuresOdds,
       flag: FLAGS[p.team] || '🏳️',
-      status: isElim ? 'eliminated' : getTeamStatus(t),
+      status,
     };
   });
 
